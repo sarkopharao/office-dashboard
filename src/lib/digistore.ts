@@ -1,4 +1,4 @@
-import type { SalesData } from "@/types";
+import type { SalesData, ProductGroupOrders } from "@/types";
 
 const BASE_URL = "https://www.digistore24.com/api/call";
 
@@ -33,6 +33,47 @@ async function apiCall(endpoint: string, method: "GET" | "POST" = "GET"): Promis
   return data.data;
 }
 
+/**
+ * Ordnet einen Produktnamen einer Produktgruppe zu.
+ * Basiert auf Analyse der tatsächlichen Digistore24-Produktnamen.
+ */
+function getProductGroup(productName: string): keyof ProductGroupOrders | null {
+  const name = productName.toLowerCase();
+
+  // PAC (Abnehm-Coaching) - "PAC | FEST | ..." oder "intumind Abnehmcoaching" (nicht Basic/Light)
+  if (name.includes("pac |") || name.includes("pac|")) return "PAC";
+  if (name.includes("abnehmcoaching") && !name.includes("basic") && !name.includes("light")) return "PAC";
+
+  // PACL (Abnehm-Coaching-Light) - "PACL" oder "Basic" oder "Light"
+  if (name.includes("pacl")) return "PACL";
+  if (name.includes("abnehmcoaching") && (name.includes("basic") || name.includes("light"))) return "PACL";
+
+  // Tiny-PAC (Abnehm-Analyse) - "Abnehm-Analyse" oder "AHA |"
+  if (name.includes("abnehm-analyse") || name.includes("aha |") || name.includes("aha|")) return "Tiny-PAC";
+
+  // Club - "Club" oder "Mitgliedschaft"
+  if (name.includes("club") || name.includes("mitgliedschaft")) return "Club";
+
+  // Leicht 2.0
+  if (name.includes("leicht")) return "Leicht 2.0";
+
+  // Event 2026
+  if (name.includes("event") || name.includes("ticket")) return "Event 2026";
+
+  return null;
+}
+
+function emptyOrdersByGroup(): ProductGroupOrders {
+  return {
+    PAC: 0,
+    PACL: 0,
+    "Tiny-PAC": 0,
+    Club: 0,
+    "Leicht 2.0": 0,
+    "Event 2026": 0,
+  };
+}
+
 export async function fetchAllSalesData(): Promise<SalesData> {
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
@@ -51,9 +92,9 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   let ordersYesterday = 0;
   let totalCustomers = 0;
   let activeSubscriptions = 0;
+  const ordersByGroup = emptyOrdersByGroup();
 
   // === statsSalesSummary ===
-  // data.for.day.amounts.EUR.vendor_netto_amount (Umsatz heute)
   if (salesSummary.status === "fulfilled") {
     try {
       const dayData = salesSummary.value?.for?.day?.amounts?.EUR;
@@ -64,7 +105,6 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   }
 
   // === statsDailyAmounts ===
-  // data.amount_list[].day + vendor_netto_amount (Strings!)
   if (dailyAmounts.status === "fulfilled") {
     try {
       const amountList = dailyAmounts.value?.amount_list;
@@ -82,7 +122,6 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   }
 
   // === listBuyers ===
-  // data.item_count (String!) = Gesamtanzahl aller Kunden
   if (buyers.status === "fulfilled") {
     try {
       totalCustomers = parseInt(buyers.value?.item_count, 10) || 0;
@@ -90,14 +129,18 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   }
 
   // === listPurchases ===
-  // data.purchase_list[] mit created_at, billing_type, billing_status
   if (purchases.status === "fulfilled") {
     try {
       const purchaseList = purchases.value?.purchase_list;
       if (Array.isArray(purchaseList)) {
         for (const p of purchaseList) {
           const createdDate = String(p.created_at || "").substring(0, 10);
-          if (createdDate === today) ordersToday++;
+          if (createdDate === today) {
+            ordersToday++;
+            // Produktgruppe zuordnen
+            const group = getProductGroup(p.main_product_name || "");
+            if (group) ordersByGroup[group]++;
+          }
           if (createdDate === yesterday) ordersYesterday++;
 
           if (p.billing_type === "subscription" && p.billing_status === "paying") {
@@ -113,6 +156,7 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     revenueYesterday,
     ordersToday,
     ordersYesterday,
+    ordersByGroup,
     totalCustomers,
     activeSubscriptions,
     fetchedAt: new Date().toISOString(),

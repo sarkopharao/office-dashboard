@@ -5,15 +5,27 @@ import SalesCard from "./SalesCard";
 import { DUMMY_SALES, SALES_REFRESH_INTERVAL } from "@/lib/constants";
 import type { SalesData } from "@/types";
 
+const PRODUCT_GROUP_CONFIG: {
+  key: keyof SalesData["ordersByGroup"];
+  label: string;
+  color: string;
+}[] = [
+  { key: "PAC", label: "PAC", color: "bg-blue-500" },
+  { key: "PACL", label: "PACL", color: "bg-blue-400" },
+  { key: "Tiny-PAC", label: "Abnehm-Analyse", color: "bg-teal-500" },
+  { key: "Club", label: "Club", color: "bg-purple-500" },
+  { key: "Leicht 2.0", label: "Leicht 2.0", color: "bg-green-500" },
+  { key: "Event 2026", label: "Event", color: "bg-orange-500" },
+];
+
 export default function SalesGrid() {
   const [sales, setSales] = useState<SalesData>(DUMMY_SALES);
 
   const syncAndFetch = useCallback(async () => {
-    // Erst Sync mit Digistore24 auslösen, dann Daten laden
     try {
       await fetch("/api/digistore/sync", { method: "POST" });
     } catch {
-      // Sync-Fehler ignorieren, cached Daten werden trotzdem geladen
+      // Sync-Fehler ignorieren
     }
 
     try {
@@ -55,42 +67,57 @@ export default function SalesGrid() {
         ? "down"
         : "neutral";
 
+  const ordersByGroup = sales.ordersByGroup || {
+    PAC: 0, PACL: 0, "Tiny-PAC": 0, Club: 0, "Leicht 2.0": 0, "Event 2026": 0,
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-4 p-6">
-      <SalesCard
-        label="Umsatz Heute"
-        value={formatCurrency(sales.revenueToday)}
-        icon="💰"
-        trend={revenueTrend}
-        trendValue={`vs. ${formatCurrency(sales.revenueYesterday)} gestern`}
-      />
-      <SalesCard
-        label="Umsatz Gestern"
-        value={formatCurrency(sales.revenueYesterday)}
-        icon="📊"
-      />
-      <SalesCard
-        label="Bestellungen Heute"
-        value={sales.ordersToday}
-        icon="🛒"
-        trend={ordersTrend}
-        trendValue={`vs. ${sales.ordersYesterday} gestern`}
-      />
-      <SalesCard
-        label="Bestellungen Gestern"
-        value={sales.ordersYesterday}
-        icon="📦"
-      />
-      <SalesCard
-        label="Gesamtkunden"
-        value={sales.totalCustomers}
-        icon="👥"
-      />
-      <SalesCard
-        label="Aktive Abos"
-        value={sales.activeSubscriptions}
-        icon="🔄"
-      />
+    <div className="flex flex-col gap-4 p-6">
+      {/* Hauptkennzahlen */}
+      <div className="grid grid-cols-2 gap-4">
+        <SalesCard
+          label="Umsatz Heute"
+          value={formatCurrency(sales.revenueToday)}
+          icon="💰"
+          trend={revenueTrend}
+          trendValue={`vs. ${formatCurrency(sales.revenueYesterday)} gestern`}
+        />
+        <SalesCard
+          label="Bestellungen Heute"
+          value={sales.ordersToday}
+          icon="🛒"
+          trend={ordersTrend}
+          trendValue={`vs. ${sales.ordersYesterday} gestern`}
+        />
+        <SalesCard
+          label="Gesamtkunden"
+          value={sales.totalCustomers}
+          icon="👥"
+        />
+        <SalesCard
+          label="Aktive Abos"
+          value={sales.activeSubscriptions}
+          icon="🔄"
+        />
+      </div>
+
+      {/* Bestellungen nach Produktgruppen */}
+      <div className="bg-intumind-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 className="text-intumind-gray text-sm font-medium mb-4">
+          Bestellungen Heute nach Produkt
+        </h3>
+        <div className="grid grid-cols-3 gap-3">
+          {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
+            <div key={key} className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${color} shrink-0`} />
+              <span className="text-intumind-gray text-sm">{label}</span>
+              <span className="text-intumind-dark font-bold text-lg ml-auto">
+                {ordersByGroup[key]}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

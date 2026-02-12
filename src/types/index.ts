@@ -1,8 +1,18 @@
+export interface ProductGroupOrders {
+  PAC: number;
+  PACL: number;
+  "Tiny-PAC": number;
+  Club: number;
+  "Leicht 2.0": number;
+  "Event 2026": number;
+}
+
 export interface SalesData {
   revenueToday: number;
   revenueYesterday: number;
   ordersToday: number;
   ordersYesterday: number;
+  ordersByGroup: ProductGroupOrders;
   totalCustomers: number;
   activeSubscriptions: number;
   fetchedAt: string;
