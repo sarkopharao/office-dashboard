@@ -8,7 +8,14 @@ import type { SalesData } from "@/types";
 export default function SalesGrid() {
   const [sales, setSales] = useState<SalesData>(DUMMY_SALES);
 
-  const fetchSales = useCallback(async () => {
+  const syncAndFetch = useCallback(async () => {
+    // Erst Sync mit Digistore24 auslösen, dann Daten laden
+    try {
+      await fetch("/api/digistore/sync", { method: "POST" });
+    } catch {
+      // Sync-Fehler ignorieren, cached Daten werden trotzdem geladen
+    }
+
     try {
       const res = await fetch("/api/digistore");
       if (res.ok) {
@@ -21,10 +28,10 @@ export default function SalesGrid() {
   }, []);
 
   useEffect(() => {
-    fetchSales();
-    const interval = setInterval(fetchSales, SALES_REFRESH_INTERVAL);
+    syncAndFetch();
+    const interval = setInterval(syncAndFetch, SALES_REFRESH_INTERVAL);
     return () => clearInterval(interval);
-  }, [fetchSales]);
+  }, [syncAndFetch]);
 
   const formatCurrency = (amount: number) =>
     amount.toLocaleString("de-DE", {
