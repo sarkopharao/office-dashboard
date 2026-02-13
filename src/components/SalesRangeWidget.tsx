@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Column, Flex, Grid, Text } from "@once-ui-system/core";
 import { PRODUCT_GROUP_CONFIG } from "@/lib/constants";
 import { useSalesRange } from "@/hooks/useSalesRange";
@@ -18,7 +18,11 @@ const CRYSTAL_PHRASES = [
   "Blicke in die Vergangenheit...",
   "Lese die Umsatz-Sterne...",
   "Befrage die Kristallkugel...",
-  "Enthuelle die Zahlen...",
+  "Die Kugel wird warm...",
+  "Zaehle unsichtbare Euros...",
+  "Frage das Umsatz-Orakel...",
+  "Reise durch die Zeit...",
+  "Schuettle die Schneekugel...",
 ];
 
 function formatCurrency(amount: number): string {
@@ -44,6 +48,16 @@ export default memo(function SalesRangeWidget() {
 
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const wasLoadingRef = useRef(false);
+
+  // Bei jedem neuen Ladevorgang den Spruch rotieren
+  useEffect(() => {
+    if (loading && !wasLoadingRef.current) {
+      setPhraseIndex((prev) => (prev + 1) % CRYSTAL_PHRASES.length);
+    }
+    wasLoadingRef.current = loading;
+  }, [loading]);
 
   const handleCustomSubmit = () => {
     if (customFrom && customTo) {
@@ -186,14 +200,14 @@ export default memo(function SalesRangeWidget() {
         </Flex>
       )}
 
-      {/* Kristallkugel-Ladeanimation */}
-      {loading && !rangeData && (
+      {/* Kristallkugel-Ladeanimation (bei jedem Laden) */}
+      {loading && (
         <Flex
           direction="column"
           horizontal="center"
           vertical="center"
           gap="8"
-          style={{ padding: "1.5rem 0" }}
+          style={{ padding: "1.2rem 0" }}
         >
           {/* Glühende Kristallkugel mit Sternen */}
           <div style={{ position: "relative", width: "60px", height: "60px" }}>
@@ -234,7 +248,7 @@ export default memo(function SalesRangeWidget() {
               animation: "crystalTextFade 3s ease-in-out infinite",
             }}
           >
-            {CRYSTAL_PHRASES[Math.floor(Date.now() / 3000) % CRYSTAL_PHRASES.length]}
+            {CRYSTAL_PHRASES[phraseIndex]}
           </Text>
           <Text
             variant="body-default-s"
@@ -259,9 +273,9 @@ export default memo(function SalesRangeWidget() {
         </Flex>
       )}
 
-      {/* Umsatz + Bestellungen (mit dezenter Opacity bei Refresh) */}
-      {rangeData && (
-        <div style={{ opacity: loading ? 0.5 : 1, transition: "opacity 0.3s ease" }}>
+      {/* Umsatz + Bestellungen (versteckt während Laden) */}
+      {!loading && rangeData && (
+        <div>
           <Grid columns="2" gap="s">
             <Column horizontal="center" vertical="center" style={{ textAlign: "center" }}>
               <Text
