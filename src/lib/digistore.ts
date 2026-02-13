@@ -162,10 +162,18 @@ export async function fetchAllSalesData(): Promise<SalesData> {
 
   let revenueToday = 0;
   let revenueYesterday = 0;
+  let revenueThisMonth = 0;
+  let revenueLastMonth = 0;
   let ordersToday = 0;
   let ordersYesterday = 0;
   let totalCustomers = 0;
   const ordersByGroup = emptyOrdersByGroup();
+
+  // Monatspräfixe berechnen (z.B. "2026-02" und "2026-01")
+  const now = new Date();
+  const thisMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthPrefix = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
 
   // Produkt-Gruppen-Map auslesen
   const groupMap = productGroupMap.status === "fulfilled" ? productGroupMap.value : new Map();
@@ -173,9 +181,32 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   // === statsSalesSummary ===
   if (salesSummary.status === "fulfilled") {
     try {
-      const dayData = salesSummary.value?.for?.day?.amounts?.EUR;
+      const periods = salesSummary.value?.for;
+
+      // Tagesumsatz
+      const dayData = periods?.day?.amounts?.EUR;
       if (dayData) {
         revenueToday = parseFloat(dayData.vendor_netto_amount) || 0;
+      }
+
+      // Monatsumsatz (aktueller Monat - zuverlässiger als dailyAmounts)
+      const monthData = periods?.month?.amounts?.EUR;
+      if (monthData) {
+        revenueThisMonth = parseFloat(monthData.vendor_netto_amount) || 0;
+      }
+
+      // Letzter Monat: Jahresumsatz minus aktueller Monat, geteilt durch vergangene Monate
+      // Besser: Wir berechnen es aus year - month wenn wir im Feb+ sind
+      const yearData = periods?.year?.amounts?.EUR;
+      if (yearData && monthData) {
+        const yearRevenue = parseFloat(yearData.vendor_netto_amount) || 0;
+        const monthRevenue = parseFloat(monthData.vendor_netto_amount) || 0;
+        // Differenz = alle vorherigen Monate in diesem Jahr
+        // Im Februar ist das = Januar, im März = Jan+Feb, etc.
+        const currentMonth = new Date().getMonth(); // 0=Jan, 1=Feb, ...
+        if (currentMonth > 0) {
+          revenueLastMonth = (yearRevenue - monthRevenue) / currentMonth;
+        }
       }
     } catch { /* ignore */ }
   }
@@ -186,11 +217,24 @@ export async function fetchAllSalesData(): Promise<SalesData> {
       const amountList = dailyAmounts.value?.amount_list;
       if (Array.isArray(amountList)) {
         for (const entry of amountList) {
-          if (entry.day === today) {
-            revenueToday = revenueToday || parseFloat(entry.vendor_netto_amount) || 0;
+          const day = String(entry.day || "");
+          const amount = parseFloat(entry.vendor_netto_amount) || 0;
+
+          // Tagesumsätze
+          if (day === today) {
+            revenueToday = revenueToday || amount;
           }
-          if (entry.day === yesterday) {
-            revenueYesterday = parseFloat(entry.vendor_netto_amount) || 0;
+          if (day === yesterday) {
+            revenueYesterday = amount;
+          }
+
+          // Monatssummen
+          const monthPrefix = day.substring(0, 7);
+          if (monthPrefix === thisMonthPrefix) {
+            revenueThisMonth += amount;
+          }
+          if (monthPrefix === lastMonthPrefix) {
+            revenueLastMonth += amount;
           }
         }
       }
@@ -229,6 +273,8 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     ordersToday,
     ordersYesterday,
     ordersByGroup,
+    revenueThisMonth,
+    revenueLastMonth,
     totalCustomers,
     fetchedAt: new Date().toISOString(),
   };

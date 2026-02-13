@@ -33,6 +33,8 @@ export const DUMMY_SALES: import("@/types").SalesData = {
     "Leicht 2.0": 2,
     "Event 2026": 2,
   },
+  revenueThisMonth: 48500,
+  revenueLastMonth: 62300,
   totalCustomers: 8432,
   fetchedAt: new Date().toISOString(),
 };

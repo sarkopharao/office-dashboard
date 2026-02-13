@@ -59,8 +59,8 @@ export default function SalesGrid() {
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      {/* Hauptkennzahlen - horizontal wie im Referenz-Dashboard */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Obere Reihe: Kunden + Tagesumsatz */}
+      <div className="grid grid-cols-2 gap-4">
         <SalesCard
           label="Gesamtkunden"
           value={sales.totalCustomers}
@@ -74,6 +74,16 @@ export default function SalesGrid() {
           sublabel="Umsatz Gestern"
           subvalue={formatCurrency(sales.revenueYesterday)}
         />
+      </div>
+
+      {/* Untere Reihe: Monatsumsatz + Bestellungen */}
+      <div className="grid grid-cols-2 gap-4">
+        <SalesCard
+          label="Umsatz Monat"
+          value={formatCurrency(sales.revenueThisMonth)}
+          sublabel="Letzter Monat"
+          subvalue={formatCurrency(sales.revenueLastMonth)}
+        />
         <SalesCard
           label="Bestellungen Heute"
           value={sales.ordersToday}
@@ -83,7 +93,7 @@ export default function SalesGrid() {
       </div>
 
       {/* Bestellungen nach Produktgruppen */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
+      <div className="rounded-2xl shadow-sm p-6 backdrop-blur-sm" style={{ background: "rgba(255, 255, 255, 0.75)" }}>
         <h3 className="text-xs font-semibold tracking-widest uppercase text-intumind-gray-light mb-5">
           Bestellungen Heute nach Produkt
         </h3>

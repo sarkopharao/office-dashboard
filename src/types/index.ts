@@ -13,6 +13,8 @@ export interface SalesData {
   ordersToday: number;
   ordersYesterday: number;
   ordersByGroup: ProductGroupOrders;
+  revenueThisMonth: number;
+  revenueLastMonth: number;
   totalCustomers: number;
   fetchedAt: string;
 }

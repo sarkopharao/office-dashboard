@@ -22,9 +22,12 @@ export default function SalesCard({
       className={`rounded-2xl p-6 flex flex-col justify-center items-center text-center min-h-[140px] ${
         isHighlight
           ? "text-white shadow-lg"
-          : "bg-white shadow-sm"
+          : "shadow-sm backdrop-blur-sm"
       }`}
-      style={isHighlight ? { background: "linear-gradient(to bottom right, #009399, #007a7f)" } : undefined}
+      style={isHighlight
+        ? { background: "linear-gradient(to bottom right, #009399, #007a7f)" }
+        : { background: "rgba(255, 255, 255, 0.75)" }
+      }
     >
       <span
         className={`text-4xl font-extrabold tracking-tight leading-none number-transition ${
