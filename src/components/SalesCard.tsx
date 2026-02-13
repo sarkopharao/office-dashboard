@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Column, Text } from "@once-ui-system/core";
 
 interface SalesCardProps {
@@ -10,7 +11,7 @@ interface SalesCardProps {
   variant?: "default" | "highlight";
 }
 
-export default function SalesCard({
+export default memo(function SalesCard({
   label,
   value,
   sublabel,
@@ -106,4 +107,4 @@ export default function SalesCard({
       )}
     </Column>
   );
-}
+})

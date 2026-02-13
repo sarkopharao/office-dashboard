@@ -1,112 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
 import { Column, Flex, Grid, Text } from "@once-ui-system/core";
 import SalesCard from "./SalesCard";
 import RevenueChart from "./RevenueChart";
 import SalesCelebration from "./SalesCelebration";
-import { SALES_REFRESH_INTERVAL } from "@/lib/constants";
-import type { SalesData } from "@/types";
-
-const PRODUCT_GROUP_CONFIG: {
-  key: keyof SalesData["ordersByGroup"];
-  label: string;
-  color: string;
-}[] = [
-  { key: "PAC", label: "PAC", color: "#009399" },
-  { key: "PACL", label: "PACL", color: "#00a8af" },
-  { key: "Tiny-PAC", label: "Abnehm-Analyse", color: "#0E75B9" },
-  { key: "Club", label: "Club", color: "#73A942" },
-  { key: "Leicht 2.0", label: "Leicht 2.0", color: "#ECB31B" },
-  { key: "Event 2026", label: "Event", color: "#007a7f" },
-];
-
-const MIN_LOADING_MS = 2000; // Mindestens 2 Sek. Geldregen zeigen
+import { PRODUCT_GROUP_CONFIG } from "@/lib/constants";
+import { useSalesData } from "@/hooks/useSalesData";
 
 export default function SalesGrid() {
-  const [sales, setSales] = useState<SalesData | null>(null);
-  const [showLoading, setShowLoading] = useState(true);
-  const [newOrderCount, setNewOrderCount] = useState(0);
-  const prevOrdersRef = useRef<number | null>(null);
-  const isFirstLoadRef = useRef(true);
-  const pendingDataRef = useRef<SalesData | null>(null);
-
-  // Gecachte Daten aus der API holen (ohne Sync, sofort)
-  const fetchCached = useCallback(async () => {
-    try {
-      const res = await fetch("/api/digistore");
-      if (res.ok && res.status !== 204) {
-        const data: SalesData = await res.json();
-        return data;
-      }
-    } catch {
-      // Ignorieren
-    }
-    return null;
-  }, []);
-
-  // Sync mit Digistore24 + danach frische Daten holen
-  const syncAndFetch = useCallback(async () => {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      await fetch("/api/digistore/sync", { method: "POST", signal: controller.signal });
-      clearTimeout(timeout);
-    } catch {
-      // Sync-Fehler/Timeout ignorieren
-    }
-
-    const data = await fetchCached();
-    if (data) {
-      // Neue Bestellungen erkennen (nicht beim ersten Laden)
-      if (isFirstLoadRef.current) {
-        prevOrdersRef.current = data.ordersToday;
-        isFirstLoadRef.current = false;
-      } else if (prevOrdersRef.current !== null) {
-        const diff = data.ordersToday - prevOrdersRef.current;
-        if (diff > 0) {
-          setNewOrderCount(diff);
-        }
-        prevOrdersRef.current = data.ordersToday;
-      }
-
-      setSales(data);
-    }
-  }, [fetchCached]);
-
-  useEffect(() => {
-    const loadStart = Date.now();
-
-    // 1. Sofort gecachte Daten laden (kein Sync, kein Warten)
-    fetchCached().then((data) => {
-      if (data) {
-        pendingDataRef.current = data;
-        prevOrdersRef.current = data.ordersToday;
-        isFirstLoadRef.current = false;
-
-        // Mindestens 3 Sek. Animation zeigen
-        const elapsed = Date.now() - loadStart;
-        const remaining = Math.max(0, MIN_LOADING_MS - elapsed);
-        setTimeout(() => {
-          setSales(pendingDataRef.current);
-          setShowLoading(false);
-        }, remaining);
-      }
-    });
-
-    // 2. Im Hintergrund Sync starten (dauert ~10 Sek)
-    syncAndFetch();
-
-    // 3. Fallback: Falls nach 3 Sek noch keine Daten, Loading trotzdem beenden
-    const fallbackTimer = setTimeout(() => setShowLoading(false), MIN_LOADING_MS);
-
-    // 4. Danach regelmäßig syncen
-    const interval = setInterval(syncAndFetch, SALES_REFRESH_INTERVAL);
-    return () => {
-      clearInterval(interval);
-      clearTimeout(fallbackTimer);
-    };
-  }, [syncAndFetch, fetchCached]);
+  const { sales, showLoading, newOrderCount, clearNewOrders } = useSalesData();
 
   const formatCurrency = (amount: number) =>
     amount.toLocaleString("de-DE", {
@@ -116,7 +18,7 @@ export default function SalesGrid() {
       maximumFractionDigits: 0,
     });
 
-  // Geldregen-Animation während Daten geladen werden (mind. 3 Sek.)
+  // Geldregen-Animation während Daten geladen werden (mind. 2 Sek.)
   if (!sales || showLoading) {
     const moneyEmojis = ["💰", "💶", "🪙", "💵", "💎", "🤑"];
     return (
@@ -191,7 +93,7 @@ export default function SalesGrid() {
       {/* Raketen + Konfetti bei neuen Bestellungen */}
       <SalesCelebration
         newOrderCount={newOrderCount}
-        onAnimationComplete={() => setNewOrderCount(0)}
+        onAnimationComplete={clearNewOrders}
       />
 
       {/* Obere Reihe: Kunden + Tagesumsatz */}

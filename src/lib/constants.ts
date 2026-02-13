@@ -1,6 +1,9 @@
+import type { SalesData, DailyRevenue, ProductGroupOrders } from "@/types";
+
 export const SLIDESHOW_INTERVAL = 8000; // 8 Sekunden pro Foto
 export const SALES_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 Minuten
 export const QUOTE_INTERVAL = 30000; // 30 Sekunden pro Zitat
+export const MIN_LOADING_MS = 2000; // Mindestens 2 Sek. Geldregen zeigen
 
 export const MOTIVATIONAL_QUOTES = [
   { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
@@ -20,9 +23,32 @@ export const MOTIVATIONAL_QUOTES = [
   { text: "Health is not valued till sickness comes.", author: "Thomas Fuller" },
 ];
 
+export const PRODUCT_GROUP_CONFIG: {
+  key: keyof ProductGroupOrders;
+  label: string;
+  color: string;
+}[] = [
+  { key: "PAC", label: "PAC", color: "#009399" },
+  { key: "PACL", label: "PACL", color: "#00a8af" },
+  { key: "Tiny-PAC", label: "Abnehm-Analyse", color: "#0E75B9" },
+  { key: "Club", label: "Club", color: "#73A942" },
+  { key: "Leicht 2.0", label: "Leicht 2.0", color: "#ECB31B" },
+  { key: "Event 2026", label: "Event", color: "#007a7f" },
+];
+
+export const DAY_NAMES = [
+  "Sonntag", "Montag", "Dienstag", "Mittwoch",
+  "Donnerstag", "Freitag", "Samstag",
+];
+
+export const MONTH_NAMES = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember",
+];
+
 // Dummy dailyRevenue: 14 Tage rückwärts ab heute
-function generateDummyDailyRevenue(): import("@/types").DailyRevenue[] {
-  const days: import("@/types").DailyRevenue[] = [];
+function generateDummyDailyRevenue(): DailyRevenue[] {
+  const days: DailyRevenue[] = [];
   const amounts = [
     1850, 2400, 3100, 2750, 4200, 3800, 1200,  // Vorwoche (Mo-So)
     2100, 2900, 3500, 2847, 4600, 4041, 1500,   // Aktuelle Woche (Mo-So)
@@ -38,7 +64,7 @@ function generateDummyDailyRevenue(): import("@/types").DailyRevenue[] {
   return days;
 }
 
-export const DUMMY_SALES: import("@/types").SalesData = {
+export const DUMMY_SALES: SalesData = {
   revenueToday: 2847.5,
   revenueYesterday: 3192.0,
   ordersToday: 12,

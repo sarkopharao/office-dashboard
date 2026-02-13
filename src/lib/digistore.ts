@@ -3,58 +3,14 @@ import type { SalesData, ProductGroupOrders, DailyRevenue } from "@/types";
 const BASE_URL = "https://www.digistore24.com/api/call";
 const API_TIMEOUT = 10000; // 10 Sekunden Timeout für API-Calls
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function apiCall(endpoint: string, method: "GET" | "POST" = "GET"): Promise<any> {
+async function apiCall(
+  endpoint: string,
+  params: Record<string, string> = {},
+  method: "GET" | "POST" = "GET",
+): Promise<unknown> {
   const apiKey = process.env.DIGISTORE_API_KEY;
 
-  if (!apiKey || apiKey === "dein-api-key-hier") {
-    throw new Error("DIGISTORE_API_KEY nicht konfiguriert");
-  }
-
-  const url = `${BASE_URL}/${endpoint}?language=de`;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT);
-
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        "X-DS-API-KEY": apiKey,
-      },
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      throw new Error(`Digistore24 API Fehler: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    if (data.result === "error") {
-      throw new Error(`Digistore24: ${data.message || "Unbekannter Fehler"}`);
-    }
-
-    return data.data;
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Digistore24 API Timeout: ${endpoint} nach ${API_TIMEOUT / 1000}s`);
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/**
- * API-Call mit zusätzlichen Query-Parametern (z.B. page=2, date_from=...).
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function apiCallWithParams(endpoint: string, params: Record<string, string> = {}, method: "GET" | "POST" = "GET"): Promise<any> {
-  const apiKey = process.env.DIGISTORE_API_KEY;
-
-  if (!apiKey || apiKey === "dein-api-key-hier") {
+  if (!apiKey) {
     throw new Error("DIGISTORE_API_KEY nicht konfiguriert");
   }
 
@@ -131,25 +87,54 @@ function matchProductGroup(productName: string): keyof ProductGroupOrders | null
  * Lädt ALLE Purchases mit Pagination (page_size: 500).
  * Maximal 10 Seiten als Sicherheitsnetz.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchAllPurchases(): Promise<any[]> {
+// Digistore24 API Response Interfaces
+interface DigiStorePurchase {
+  created_at?: string;
+  main_product_name?: string;
+}
+
+interface DigiStorePage {
+  purchase_list?: DigiStorePurchase[];
+  page_count?: string | number;
+}
+
+interface AmountEntry {
+  vendor_netto_amount?: string;
+}
+
+interface SalesSummaryData {
+  for?: {
+    day?: { amounts?: { EUR?: AmountEntry } };
+    month?: { amounts?: { EUR?: AmountEntry } };
+    year?: { amounts?: { EUR?: AmountEntry } };
+  };
+}
+
+interface DailyAmountsData {
+  amount_list?: Array<{ day?: string; vendor_netto_amount?: string }>;
+}
+
+interface BuyersData {
+  item_count?: string | number;
+}
+
+async function fetchAllPurchases(): Promise<DigiStorePurchase[]> {
   const MAX_PAGES = 10;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let allPurchases: any[] = [];
+  let allPurchases: DigiStorePurchase[] = [];
 
   // Erste Seite laden
-  const firstPage = await apiCallWithParams("listPurchases");
+  const firstPage = await apiCall("listPurchases") as DigiStorePage;
   const purchaseList = firstPage?.purchase_list || [];
   allPurchases = [...purchaseList];
 
-  const pageCount = parseInt(firstPage?.page_count, 10) || 1;
+  const pageCount = parseInt(String(firstPage?.page_count ?? "1"), 10) || 1;
 
   // Weitere Seiten laden falls vorhanden
   if (pageCount > 1) {
     const pagesToLoad = Math.min(pageCount, MAX_PAGES);
     for (let page = 2; page <= pagesToLoad; page++) {
       try {
-        const pageData = await apiCallWithParams("listPurchases", { page: String(page) });
+        const pageData = await apiCall("listPurchases", { page: String(page) }) as DigiStorePage;
         const pagePurchases = pageData?.purchase_list || [];
         allPurchases = [...allPurchases, ...pagePurchases];
       } catch {
@@ -179,9 +164,9 @@ export async function fetchAllSalesData(): Promise<SalesData> {
 
   // Alle API-Calls parallel ausführen (ohne listProducts – Zuordnung über main_product_name)
   const [salesSummary, dailyAmounts, buyers, purchases] = await Promise.allSettled([
-    apiCall("statsSalesSummary", "POST"),
-    apiCall("statsDailyAmounts", "POST"),
-    apiCall("listBuyers"),
+    apiCall("statsSalesSummary", {}, "POST") as Promise<SalesSummaryData>,
+    apiCall("statsDailyAmounts", {}, "POST") as Promise<DailyAmountsData>,
+    apiCall("listBuyers") as Promise<BuyersData>,
     fetchAllPurchases(),
   ]);
 
@@ -214,21 +199,21 @@ export async function fetchAllSalesData(): Promise<SalesData> {
       // Tagesumsatz
       const dayData = periods?.day?.amounts?.EUR;
       if (dayData) {
-        revenueToday = parseFloat(dayData.vendor_netto_amount) || 0;
+        revenueToday = parseFloat(String(dayData.vendor_netto_amount)) || 0;
       }
 
       // Monatsumsatz (aktueller Monat - zuverlässiger als dailyAmounts)
       const monthData = periods?.month?.amounts?.EUR;
       if (monthData) {
-        revenueThisMonth = parseFloat(monthData.vendor_netto_amount) || 0;
+        revenueThisMonth = parseFloat(String(monthData.vendor_netto_amount)) || 0;
       }
 
       // Letzter Monat: Jahresumsatz minus aktueller Monat, geteilt durch vergangene Monate
       // Besser: Wir berechnen es aus year - month wenn wir im Feb+ sind
       const yearData = periods?.year?.amounts?.EUR;
       if (yearData && monthData) {
-        const yearRevenue = parseFloat(yearData.vendor_netto_amount) || 0;
-        const monthRevenue = parseFloat(monthData.vendor_netto_amount) || 0;
+        const yearRevenue = parseFloat(String(yearData.vendor_netto_amount)) || 0;
+        const monthRevenue = parseFloat(String(monthData.vendor_netto_amount)) || 0;
         // Differenz = alle vorherigen Monate in diesem Jahr
         // Im Februar ist das = Januar, im März = Jan+Feb, etc.
         const currentMonth = new Date().getMonth(); // 0=Jan, 1=Feb, ...
@@ -250,7 +235,7 @@ export async function fetchAllSalesData(): Promise<SalesData> {
       if (Array.isArray(amountList)) {
         for (const entry of amountList) {
           const day = String(entry.day || "");
-          const amount = parseFloat(entry.vendor_netto_amount) || 0;
+          const amount = parseFloat(String(entry.vendor_netto_amount)) || 0;
 
           // Tagesumsätze (nur setzen wenn noch 0 – statsSalesSummary hat Vorrang)
           if (day === today && revenueToday === 0) {
@@ -285,7 +270,7 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   // === listBuyers ===
   if (buyers.status === "fulfilled") {
     try {
-      totalCustomers = parseInt(buyers.value?.item_count, 10) || 0;
+      totalCustomers = parseInt(String(buyers.value?.item_count ?? "0"), 10) || 0;
     } catch { /* ignore */ }
   }
 

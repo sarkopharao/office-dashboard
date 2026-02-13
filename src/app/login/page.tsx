@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Column, Flex, Text, Heading } from "@once-ui-system/core";
 import { createClient } from "@/lib/supabase/client";
-
-const ALLOWED_DOMAIN = "@intumind.de";
+import { ALLOWED_DOMAIN } from "@/lib/auth-utils";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

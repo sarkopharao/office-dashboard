@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { verifySignedToken } from "@/lib/token-verify";
+import { ALLOWED_DOMAIN } from "@/lib/auth-utils";
 import { NextRequest } from "next/server";
-
-const ALLOWED_DOMAIN = "@intumind.de";
 
 export interface AuthResult {
   authenticated: boolean;

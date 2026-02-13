@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { createSignedToken } from "@/lib/token";
 
 // POST: Admin-Login
@@ -14,7 +15,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password !== adminPassword) {
+    // Timing-safe Vergleich (verhindert Timing-Attacken)
+    const passwordBuffer = Buffer.from(String(password));
+    const expectedBuffer = Buffer.from(adminPassword);
+    const isValid =
+      passwordBuffer.length === expectedBuffer.length &&
+      crypto.timingSafeEqual(passwordBuffer, expectedBuffer);
+
+    if (!isValid) {
       return NextResponse.json(
         { error: "Falsches Passwort" },
         { status: 401 }

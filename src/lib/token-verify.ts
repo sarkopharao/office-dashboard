@@ -11,7 +11,7 @@
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
   return bytes;
 }
@@ -61,7 +61,8 @@ function timingSafeEqual(a: string, b: string): boolean {
  */
 export async function verifySignedToken(token: string): Promise<boolean> {
   try {
-    const secret = process.env.ADMIN_PASSWORD || "fallback-secret";
+    const secret = process.env.ADMIN_PASSWORD;
+    if (!secret) return false;
     const dotIndex = token.indexOf(".");
     if (dotIndex === -1) return false;
 

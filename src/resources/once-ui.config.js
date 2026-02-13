@@ -1,6 +1,6 @@
 // intumind Office Dashboard – Once UI Configuration
 
-const baseURL = "https://dashboard.intumind.de";
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL || "https://dashboard.intumind.de";
 
 // Fonts: Lora (heading) + Outfit (body/label)
 import { Outfit, Lora } from "next/font/google";

@@ -15,17 +15,17 @@ const CHANGE_INTERVAL = 30000; // Alle 30 Sekunden wechseln
 
 export default function DashboardBackground() {
   const [bgIndex, setBgIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [nextIndex, setNextIndex] = useState(1);
+  const [fading, setFading] = useState(false);
+
+  const nextIndex = (bgIndex + 1) % BACKGROUND_STYLES.length;
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setNextIndex((prev) => (prev + 1) % BACKGROUND_STYLES.length);
-      setIsTransitioning(true);
+      setFading(true);
 
       setTimeout(() => {
         setBgIndex((prev) => (prev + 1) % BACKGROUND_STYLES.length);
-        setIsTransitioning(false);
+        setFading(false);
       }, 2000);
     }, CHANGE_INTERVAL);
 
@@ -42,7 +42,7 @@ export default function DashboardBackground() {
           zIndex: 0,
           background: BACKGROUND_STYLES[bgIndex],
           transition: "opacity 2s ease-in-out",
-          opacity: isTransitioning ? 0 : 1,
+          opacity: fading ? 0 : 1,
         }}
       />
       {/* Nächster Hintergrund (fade-in) */}
@@ -53,7 +53,7 @@ export default function DashboardBackground() {
           zIndex: 0,
           background: BACKGROUND_STYLES[nextIndex],
           transition: "opacity 2s ease-in-out",
-          opacity: isTransitioning ? 1 : 0,
+          opacity: fading ? 1 : 0,
         }}
       />
     </>

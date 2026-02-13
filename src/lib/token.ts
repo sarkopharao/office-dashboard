@@ -8,7 +8,8 @@ import crypto from "crypto";
  * WICHTIG: Nur in Node.js-Kontext verwenden (API Routes), NICHT in Edge/Middleware.
  */
 export function createSignedToken(): string {
-  const secret = process.env.ADMIN_PASSWORD || "fallback-secret";
+  const secret = process.env.ADMIN_PASSWORD;
+  if (!secret) throw new Error("ADMIN_PASSWORD nicht konfiguriert");
   const timestamp = Date.now().toString();
   const signature = crypto
     .createHmac("sha256", secret)

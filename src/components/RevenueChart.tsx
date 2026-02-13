@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Column, Flex, Text } from "@once-ui-system/core";
 import {
   AreaChart,
@@ -10,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { Payload } from "recharts/types/component/DefaultTooltipContent";
 import type { DailyRevenue } from "@/types";
 
 // Wochentage deutsch abkürzen
@@ -79,14 +81,18 @@ function formatEur(value: number): string {
   });
 }
 
-// Custom Tooltip
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CustomTooltip({ active, payload, label }: any) {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: ReadonlyArray<Payload<number, string>>;
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
-  const current = payload.find((p: { dataKey: string }) => p.dataKey === "current");
-  const previous = payload.find((p: { dataKey: string }) => p.dataKey === "previous");
-  const date = payload[0]?.payload?.date || "";
+  const current = payload.find((p) => p.dataKey === "current");
+  const previous = payload.find((p) => p.dataKey === "previous");
+  const date = (payload[0]?.payload as ChartDataPoint)?.date || "";
 
   return (
     <div
@@ -106,7 +112,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#009399" }} />
           <span style={{ color: "#ffffff", fontSize: "0.8rem", fontWeight: 600 }}>
-            {formatEur(current.value)}
+            {formatEur(Number(current.value))}
           </span>
         </div>
       )}
@@ -114,7 +120,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#B2BDD1" }} />
           <span style={{ color: "#B2BDD1", fontSize: "0.8rem" }}>
-            {formatEur(previous.value)}
+            {formatEur(Number(previous.value))}
           </span>
         </div>
       )}
@@ -126,8 +132,8 @@ interface RevenueChartProps {
   dailyRevenue: DailyRevenue[];
 }
 
-export default function RevenueChart({ dailyRevenue }: RevenueChartProps) {
-  const { points: data, hasPrevious } = transformData(dailyRevenue);
+export default memo(function RevenueChart({ dailyRevenue }: RevenueChartProps) {
+  const { points: data, hasPrevious } = useMemo(() => transformData(dailyRevenue), [dailyRevenue]);
 
   if (data.length === 0) {
     return null;
@@ -252,4 +258,4 @@ export default function RevenueChart({ dailyRevenue }: RevenueChartProps) {
       </div>
     </Column>
   );
-}
+})

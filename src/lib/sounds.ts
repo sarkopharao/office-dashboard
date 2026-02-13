@@ -39,18 +39,16 @@ function getContext(): AudioContext {
             contextReady = true;
           });
         }
-        document.removeEventListener("click", resume);
-        document.removeEventListener("keydown", resume);
-        document.removeEventListener("touchstart", resume);
       };
-      document.addEventListener("click", resume);
-      document.addEventListener("keydown", resume);
-      document.addEventListener("touchstart", resume);
+      // { once: true } entfernt Listener automatisch nach erstem Aufruf
+      document.addEventListener("click", resume, { once: true });
+      document.addEventListener("keydown", resume, { once: true });
+      document.addEventListener("touchstart", resume, { once: true });
     } else {
       contextReady = true;
     }
 
-    // State-Change Listener
+    // State-Change Listener (wird mit audioCtx.close() automatisch entfernt)
     audioCtx.addEventListener("statechange", () => {
       if (audioCtx?.state === "running") {
         contextReady = true;

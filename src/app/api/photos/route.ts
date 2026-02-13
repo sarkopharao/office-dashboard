@@ -5,14 +5,32 @@ import crypto from "crypto";
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 const SIGNED_URL_EXPIRES = 3600; // 1 Stunde (Slideshow refresht alle 60s)
+const DEFAULT_PAGE_SIZE = 50;
 
 // GET: Liste aller Fotos mit Signed URLs
-export async function GET() {
+// Optionale Pagination: ?page=1&limit=50 (ohne Parameter werden alle zurückgegeben)
+export async function GET(request: NextRequest) {
   try {
-    const { data: photos, error } = await supabaseAdmin
+    const { searchParams } = request.nextUrl;
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+
+    let query = supabaseAdmin
       .from("photos")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("uploaded_at", { ascending: true });
+
+    let totalCount: number | null = null;
+
+    if (pageParam) {
+      const page = Math.max(1, parseInt(pageParam, 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(limitParam || "", 10) || DEFAULT_PAGE_SIZE));
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+    }
+
+    const { data: photos, error, count } = await query;
+    totalCount = count;
 
     if (error) {
       console.error("Photos DB Fehler:", error.message);
@@ -20,7 +38,7 @@ export async function GET() {
     }
 
     if (!photos || photos.length === 0) {
-      return NextResponse.json([]);
+      return NextResponse.json(pageParam ? { photos: [], total: totalCount ?? 0 } : []);
     }
 
     // Signed URLs für alle Fotos auf einmal generieren
@@ -41,6 +59,10 @@ export async function GET() {
       })
     );
 
+    // Mit Pagination: Objekt mit total zurückgeben; ohne: Array (abwärtskompatibel)
+    if (pageParam) {
+      return NextResponse.json({ photos: photosWithUrls, total: totalCount ?? photosWithUrls.length });
+    }
     return NextResponse.json(photosWithUrls);
   } catch {
     return NextResponse.json([]);

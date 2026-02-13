@@ -5,6 +5,8 @@ import Image from "next/image";
 import { Flex } from "@once-ui-system/core";
 import Clock from "./Clock";
 import { createClient } from "@/lib/supabase/client";
+import { isAdminClient } from "@/lib/auth-utils";
+import { useLogout } from "@/hooks/useLogout";
 
 interface UserState {
   loggedIn: boolean;
@@ -13,7 +15,7 @@ interface UserState {
 
 export default function Header() {
   const [user, setUser] = useState<UserState | null>(null);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const { loggingOut, handleLogout } = useLogout();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -22,13 +24,9 @@ export default function Header() {
         const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
         if (supabaseUser?.email) {
-          const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
-            .split(",")
-            .map((e) => e.trim().toLowerCase())
-            .filter(Boolean);
           setUser({
             loggedIn: true,
-            isAdmin: adminEmails.includes(supabaseUser.email.toLowerCase()),
+            isAdmin: isAdminClient(supabaseUser.email),
           });
           return;
         }
@@ -47,18 +45,6 @@ export default function Header() {
 
     checkUser();
   }, []);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {
-      // Supabase nicht verfügbar
-    }
-    await fetch("/api/auth", { method: "DELETE" });
-    window.location.href = "/login";
-  };
 
   return (
     <Flex

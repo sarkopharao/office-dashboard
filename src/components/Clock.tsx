@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Column, Text } from "@once-ui-system/core";
+import { DAY_NAMES, MONTH_NAMES } from "@/lib/constants";
 
 export default function Clock() {
   const [time, setTime] = useState<Date | null>(null);
@@ -14,18 +15,9 @@ export default function Clock() {
 
   if (!time) return null;
 
-  const dayNames = [
-    "Sonntag", "Montag", "Dienstag", "Mittwoch",
-    "Donnerstag", "Freitag", "Samstag",
-  ];
-  const monthNames = [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember",
-  ];
-
-  const day = dayNames[time.getDay()];
+  const day = DAY_NAMES[time.getDay()];
   const date = time.getDate();
-  const month = monthNames[time.getMonth()];
+  const month = MONTH_NAMES[time.getMonth()];
   const year = time.getFullYear();
   const hours = time.getHours().toString().padStart(2, "0");
   const minutes = time.getMinutes().toString().padStart(2, "0");

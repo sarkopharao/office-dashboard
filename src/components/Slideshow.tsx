@@ -2,21 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Flex, Text } from "@once-ui-system/core";
-import { SLIDESHOW_INTERVAL, MOTIVATIONAL_QUOTES, QUOTE_INTERVAL } from "@/lib/constants";
+import { SLIDESHOW_INTERVAL } from "@/lib/constants";
+import { useRotatingQuote } from "@/hooks/useRotatingQuote";
 import type { Photo } from "@/types";
 
 // Layout-Varianten: immer 2 oder 3 Fotos
-type LayoutVariant =
-  | "duo-overlap"        // 2 Fotos überlappend
-  | "duo-spread"         // 2 Fotos nebeneinander versetzt
-  | "trio-fan"           // 3 Fotos fächerförmig
-  | "trio-stack";        // 3 Fotos gestapelt versetzt
+type LayoutVariant = "duo-overlap" | "duo-spread" | "trio-fan" | "trio-stack";
 
 const LAYOUT_VARIANTS: LayoutVariant[] = [
-  "duo-overlap",
-  "trio-fan",
-  "duo-spread",
-  "trio-stack",
   "duo-overlap",
   "trio-fan",
   "duo-spread",
@@ -67,9 +60,8 @@ export default function Slideshow() {
   const [isVisible, setIsVisible] = useState(true);
   const [layoutStep, setLayoutStep] = useState(0);
 
-  // Quote State
-  const [quoteIndex, setQuoteIndex] = useState(0);
-  const [quoteVisible, setQuoteVisible] = useState(true);
+  // Quote State (via Hook)
+  const { quote, quoteVisible } = useRotatingQuote();
 
   const fetchPhotos = useCallback(async () => {
     try {
@@ -125,26 +117,6 @@ export default function Slideshow() {
       }
     }
   }, [currentIndex, photos]);
-
-  // === Quote-Logik ===
-  useEffect(() => {
-    // Start mit zufälligem Zitat
-    setQuoteIndex(Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length));
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setQuoteVisible(false);
-      setTimeout(() => {
-        setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length);
-        setQuoteVisible(true);
-      }, 800);
-    }, QUOTE_INTERVAL);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const quote = MOTIVATIONAL_QUOTES[quoteIndex];
 
   // Foto-Indizes für Duo/Trio-Layouts
   const secondIndex = (currentIndex + 1) % photos.length;
@@ -235,219 +207,74 @@ export default function Slideshow() {
     );
   }
 
+  // Hilfsfunktion: Duo-Layout rendern (auch als Trio-Fallback verwendet)
+  const renderDuo = (
+    containerStyle: React.CSSProperties,
+    first: { index: number; rotation: number; style: React.CSSProperties },
+    second: { index: number; rotation: number; style: React.CSSProperties },
+  ) => (
+    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", ...containerStyle }}>
+      <Polaroid url={photos[second.index].url} alt={photos[second.index].originalName} rotation={second.rotation} style={{ position: "absolute", ...second.style }} />
+      <Polaroid url={photos[first.index].url} alt={photos[first.index].originalName} rotation={first.rotation} style={{ position: "absolute", ...first.style }} />
+    </div>
+  );
+
+  // Hilfsfunktion: Trio-Layout rendern
+  const renderTrio = (
+    containerStyle: React.CSSProperties,
+    slots: Array<{ index: number; rotation: number; style: React.CSSProperties }>,
+  ) => (
+    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", ...containerStyle }}>
+      {slots.map((slot, i) => (
+        <Polaroid key={i} url={photos[slot.index].url} alt={photos[slot.index].originalName} rotation={slot.rotation} style={{ position: "absolute", ...slot.style }} />
+      ))}
+    </div>
+  );
+
   const renderLayout = () => {
-    // Fallback: Wenn weniger als 2 Fotos, einfach eins anzeigen
     if (photos.length < 2) {
       return (
-        <Polaroid
-          url={photos[currentIndex].url}
-          alt={photos[currentIndex].originalName}
-          rotation={-1}
-          style={{ width: "75%", height: "82%" }}
-        />
+        <Polaroid url={photos[currentIndex].url} alt={photos[currentIndex].originalName} rotation={-1} style={{ width: "75%", height: "82%" }} />
       );
     }
 
-    switch (currentLayout) {
+    // Effektives Layout: Bei Trio-Layouts mit < 3 Fotos auf Duo-Overlap zurückfallen
+    const isTrio = currentLayout === "trio-fan" || currentLayout === "trio-stack";
+    const effectiveLayout = (isTrio && photos.length < 3) ? "duo-overlap" : currentLayout;
+
+    switch (effectiveLayout) {
       case "duo-overlap":
-        return (
-          <div style={{ width: "90%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {/* Hinteres Foto – rechts unten */}
-            <Polaroid
-              url={photos[secondIndex].url}
-              alt={photos[secondIndex].originalName}
-              rotation={5}
-              style={{
-                position: "absolute",
-                width: "52%",
-                height: "60%",
-                right: "3%",
-                bottom: "5%",
-                zIndex: 1,
-              }}
-            />
-            {/* Vorderes Foto – links oben */}
-            <Polaroid
-              url={photos[currentIndex].url}
-              alt={photos[currentIndex].originalName}
-              rotation={-3}
-              style={{
-                position: "absolute",
-                width: "52%",
-                height: "60%",
-                left: "8%",
-                top: "5%",
-                zIndex: 2,
-              }}
-            />
-          </div>
+        return renderDuo(
+          { width: "90%", height: "90%" },
+          { index: currentIndex, rotation: -3, style: { width: "52%", height: "60%", left: "8%", top: "5%", zIndex: 2 } },
+          { index: secondIndex, rotation: 5, style: { width: "52%", height: "60%", right: "3%", bottom: "5%", zIndex: 1 } },
         );
 
       case "duo-spread":
-        return (
-          <div style={{ width: "92%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {/* Linkes Foto */}
-            <Polaroid
-              url={photos[currentIndex].url}
-              alt={photos[currentIndex].originalName}
-              rotation={-2}
-              style={{
-                position: "absolute",
-                width: "48%",
-                height: "60%",
-                left: "2%",
-                bottom: "5%",
-                zIndex: 2,
-              }}
-            />
-            {/* Rechtes Foto */}
-            <Polaroid
-              url={photos[secondIndex].url}
-              alt={photos[secondIndex].originalName}
-              rotation={3}
-              style={{
-                position: "absolute",
-                width: "48%",
-                height: "60%",
-                right: "2%",
-                top: "5%",
-                zIndex: 1,
-              }}
-            />
-          </div>
+        return renderDuo(
+          { width: "92%", height: "90%" },
+          { index: currentIndex, rotation: -2, style: { width: "48%", height: "60%", left: "2%", bottom: "5%", zIndex: 2 } },
+          { index: secondIndex, rotation: 3, style: { width: "48%", height: "60%", right: "2%", top: "5%", zIndex: 1 } },
         );
 
       case "trio-fan":
-        if (photos.length < 3) {
-          // Fallback auf duo-overlap wenn weniger als 3 Fotos
-          return (
-            <div style={{ width: "90%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Polaroid
-                url={photos[secondIndex].url}
-                alt={photos[secondIndex].originalName}
-                rotation={4}
-                style={{ position: "absolute", width: "52%", height: "60%", right: "3%", bottom: "5%", zIndex: 1 }}
-              />
-              <Polaroid
-                url={photos[currentIndex].url}
-                alt={photos[currentIndex].originalName}
-                rotation={-3}
-                style={{ position: "absolute", width: "52%", height: "60%", left: "8%", top: "5%", zIndex: 2 }}
-              />
-            </div>
-          );
-        }
-        return (
-          <div style={{ width: "95%", height: "92%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {/* Linkes Foto – hinten links */}
-            <Polaroid
-              url={photos[currentIndex].url}
-              alt={photos[currentIndex].originalName}
-              rotation={-6}
-              style={{
-                position: "absolute",
-                width: "40%",
-                height: "55%",
-                left: "2%",
-                bottom: "10%",
-                zIndex: 1,
-              }}
-            />
-            {/* Mittleres Foto – vorne mittig */}
-            <Polaroid
-              url={photos[secondIndex].url}
-              alt={photos[secondIndex].originalName}
-              rotation={1}
-              style={{
-                position: "absolute",
-                width: "42%",
-                height: "58%",
-                left: "29%",
-                top: "5%",
-                zIndex: 3,
-              }}
-            />
-            {/* Rechtes Foto – hinten rechts */}
-            <Polaroid
-              url={photos[thirdIndex].url}
-              alt={photos[thirdIndex].originalName}
-              rotation={5}
-              style={{
-                position: "absolute",
-                width: "40%",
-                height: "55%",
-                right: "2%",
-                bottom: "8%",
-                zIndex: 2,
-              }}
-            />
-          </div>
+        return renderTrio(
+          { width: "95%", height: "92%" },
+          [
+            { index: currentIndex, rotation: -6, style: { width: "40%", height: "55%", left: "2%", bottom: "10%", zIndex: 1 } },
+            { index: secondIndex, rotation: 1, style: { width: "42%", height: "58%", left: "29%", top: "5%", zIndex: 3 } },
+            { index: thirdIndex, rotation: 5, style: { width: "40%", height: "55%", right: "2%", bottom: "8%", zIndex: 2 } },
+          ],
         );
 
       case "trio-stack":
-        if (photos.length < 3) {
-          return (
-            <div style={{ width: "92%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Polaroid
-                url={photos[currentIndex].url}
-                alt={photos[currentIndex].originalName}
-                rotation={-2}
-                style={{ position: "absolute", width: "48%", height: "60%", left: "2%", bottom: "5%", zIndex: 2 }}
-              />
-              <Polaroid
-                url={photos[secondIndex].url}
-                alt={photos[secondIndex].originalName}
-                rotation={3}
-                style={{ position: "absolute", width: "48%", height: "60%", right: "2%", top: "5%", zIndex: 1 }}
-              />
-            </div>
-          );
-        }
-        return (
-          <div style={{ width: "95%", height: "92%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {/* Hinteres Foto – ganz hinten, leicht gedreht */}
-            <Polaroid
-              url={photos[thirdIndex].url}
-              alt={photos[thirdIndex].originalName}
-              rotation={7}
-              style={{
-                position: "absolute",
-                width: "42%",
-                height: "55%",
-                right: "5%",
-                bottom: "3%",
-                zIndex: 1,
-              }}
-            />
-            {/* Mittleres Foto */}
-            <Polaroid
-              url={photos[secondIndex].url}
-              alt={photos[secondIndex].originalName}
-              rotation={-4}
-              style={{
-                position: "absolute",
-                width: "42%",
-                height: "55%",
-                left: "5%",
-                top: "3%",
-                zIndex: 2,
-              }}
-            />
-            {/* Vorderes Foto – mittig, dominant */}
-            <Polaroid
-              url={photos[currentIndex].url}
-              alt={photos[currentIndex].originalName}
-              rotation={1.5}
-              style={{
-                position: "absolute",
-                width: "44%",
-                height: "58%",
-                left: "28%",
-                top: "12%",
-                zIndex: 3,
-              }}
-            />
-          </div>
+        return renderTrio(
+          { width: "95%", height: "92%" },
+          [
+            { index: thirdIndex, rotation: 7, style: { width: "42%", height: "55%", right: "5%", bottom: "3%", zIndex: 1 } },
+            { index: secondIndex, rotation: -4, style: { width: "42%", height: "55%", left: "5%", top: "3%", zIndex: 2 } },
+            { index: currentIndex, rotation: 1.5, style: { width: "44%", height: "58%", left: "28%", top: "12%", zIndex: 3 } },
+          ],
         );
 
       default:

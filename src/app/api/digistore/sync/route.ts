@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchAllSalesData } from "@/lib/digistore";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import type { SalesData } from "@/types";
 
 /**
  * Liest die Revenue-History aus der Supabase-Tabelle revenue_history.
@@ -119,24 +120,23 @@ export async function POST() {
     }
 
     // === SCHUTZ: Alten Cache laden für Fallback-Vergleiche ===
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let oldCache: any = null;
+    let oldCache: SalesData | null = null;
     try {
       const { data } = await supabaseAdmin
         .from("sales_cache")
         .select("data")
         .eq("id", 1)
         .single();
-      if (data) oldCache = data.data;
+      if (data) oldCache = data.data as SalesData;
     } catch { /* Kein alter Cache vorhanden */ }
 
     // === SCHUTZ: Orders aus altem Cache bewahren wenn API keine liefert ===
-    if (salesData.ordersToday === 0 && oldCache?.ordersToday > 0) {
+    if (salesData.ordersToday === 0 && oldCache && oldCache.ordersToday > 0) {
       salesData.ordersToday = oldCache.ordersToday;
       salesData.ordersYesterday = oldCache.ordersYesterday;
       salesData.ordersByGroup = oldCache.ordersByGroup;
     }
-    if (salesData.totalCustomers === 0 && oldCache?.totalCustomers > 0) {
+    if (salesData.totalCustomers === 0 && oldCache && oldCache.totalCustomers > 0) {
       salesData.totalCustomers = oldCache.totalCustomers;
     }
 

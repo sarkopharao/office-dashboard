@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Column, Flex, Grid, Text, Heading } from "@once-ui-system/core";
 import { createClient } from "@/lib/supabase/client";
+import { isAdminClient } from "@/lib/auth-utils";
+import { useLogout } from "@/hooks/useLogout";
 import type { Photo } from "@/types";
 
 interface UserInfo {
@@ -28,15 +30,9 @@ export default function AdminPage() {
         const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
         if (supabaseUser?.email) {
-          const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
-            .split(",")
-            .map((e) => e.trim().toLowerCase())
-            .filter(Boolean);
-          const isAdmin = adminEmails.includes(supabaseUser.email.toLowerCase());
-
           setUser({
             email: supabaseUser.email,
-            role: isAdmin ? "admin" : "member",
+            role: isAdminClient(supabaseUser.email) ? "admin" : "member",
             method: "supabase",
           });
           setLoading(false);
@@ -127,16 +123,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {
-      // Supabase nicht verfügbar
-    }
-    await fetch("/api/auth", { method: "DELETE" });
-    window.location.href = "/login";
-  };
+  const { handleLogout } = useLogout();
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();

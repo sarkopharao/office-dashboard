@@ -1,20 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useLogout } from "@/hooks/useLogout";
 
 export default function MobileFooter() {
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch { /* ignore */ }
-    await fetch("/api/auth", { method: "DELETE" });
-    window.location.href = "/login";
-  };
+  const { loggingOut, handleLogout } = useLogout();
 
   return (
     <div
