@@ -53,65 +53,46 @@ export default function SalesGrid() {
       maximumFractionDigits: 0,
     });
 
-  const revenueTrend: "up" | "down" | "neutral" =
-    sales.revenueToday > sales.revenueYesterday
-      ? "up"
-      : sales.revenueToday < sales.revenueYesterday
-        ? "down"
-        : "neutral";
-
-  const ordersTrend: "up" | "down" | "neutral" =
-    sales.ordersToday > sales.ordersYesterday
-      ? "up"
-      : sales.ordersToday < sales.ordersYesterday
-        ? "down"
-        : "neutral";
-
   const ordersByGroup = sales.ordersByGroup || {
     PAC: 0, PACL: 0, "Tiny-PAC": 0, Club: 0, "Leicht 2.0": 0, "Event 2026": 0,
   };
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      {/* Hauptkennzahlen */}
-      <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col gap-5 p-6">
+      {/* Hauptkennzahlen - horizontal wie im Referenz-Dashboard */}
+      <div className="grid grid-cols-3 gap-4">
+        <SalesCard
+          label="Gesamtkunden"
+          value={sales.totalCustomers}
+          variant="highlight"
+          sublabel="Bestellungen Heute"
+          subvalue={sales.ordersToday}
+        />
         <SalesCard
           label="Umsatz Heute"
           value={formatCurrency(sales.revenueToday)}
-          icon="💰"
-          trend={revenueTrend}
-          trendValue={`vs. ${formatCurrency(sales.revenueYesterday)} gestern`}
+          sublabel="Umsatz Gestern"
+          subvalue={formatCurrency(sales.revenueYesterday)}
         />
         <SalesCard
           label="Bestellungen Heute"
           value={sales.ordersToday}
-          icon="🛒"
-          trend={ordersTrend}
-          trendValue={`vs. ${sales.ordersYesterday} gestern`}
-        />
-        <SalesCard
-          label="Gesamtkunden"
-          value={sales.totalCustomers}
-          icon="👥"
-        />
-        <SalesCard
-          label="Aktive Abos"
-          value={sales.activeSubscriptions}
-          icon="🔄"
+          sublabel="Bestellungen Gestern"
+          subvalue={sales.ordersYesterday}
         />
       </div>
 
       {/* Bestellungen nach Produktgruppen */}
-      <div className="bg-intumind-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-intumind-gray text-sm font-medium mb-4">
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <h3 className="text-xs font-semibold tracking-widest uppercase text-intumind-gray-light mb-5">
           Bestellungen Heute nach Produkt
         </h3>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
             <div key={key} className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${color} shrink-0`} />
-              <span className="text-intumind-gray text-sm">{label}</span>
-              <span className="text-intumind-dark font-bold text-lg ml-auto">
+              <div className={`w-2.5 h-2.5 rounded-full ${color} shrink-0`} />
+              <span className="text-sm text-intumind-gray">{label}</span>
+              <span className="text-xl font-bold text-intumind-dark ml-auto">
                 {ordersByGroup[key]}
               </span>
             </div>

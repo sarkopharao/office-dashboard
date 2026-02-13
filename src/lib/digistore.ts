@@ -34,33 +34,106 @@ async function apiCall(endpoint: string, method: "GET" | "POST" = "GET"): Promis
 }
 
 /**
- * Ordnet einen Produktnamen einer Produktgruppe zu.
- * Basiert auf Analyse der tatsächlichen Digistore24-Produktnamen.
+ * API-Call mit zusätzlichen Query-Parametern (z.B. page=2).
  */
-function getProductGroup(productName: string): keyof ProductGroupOrders | null {
-  const name = productName.toLowerCase();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function apiCallWithParams(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  const apiKey = process.env.DIGISTORE_API_KEY;
 
-  // PAC (Abnehm-Coaching) - "PAC | FEST | ..." oder "intumind Abnehmcoaching" (nicht Basic/Light)
-  if (name.includes("pac |") || name.includes("pac|")) return "PAC";
-  if (name.includes("abnehmcoaching") && !name.includes("basic") && !name.includes("light")) return "PAC";
+  if (!apiKey || apiKey === "dein-api-key-hier") {
+    throw new Error("DIGISTORE_API_KEY nicht konfiguriert");
+  }
 
-  // PACL (Abnehm-Coaching-Light) - "PACL" oder "Basic" oder "Light"
-  if (name.includes("pacl")) return "PACL";
-  if (name.includes("abnehmcoaching") && (name.includes("basic") || name.includes("light"))) return "PACL";
+  const url = new URL(`${BASE_URL}/${endpoint}`);
+  url.searchParams.set("language", "de");
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
 
-  // Tiny-PAC (Abnehm-Analyse) - "Abnehm-Analyse" oder "AHA |"
-  if (name.includes("abnehm-analyse") || name.includes("aha |") || name.includes("aha|")) return "Tiny-PAC";
+  const res = await fetch(url.toString(), {
+    headers: {
+      "Content-Type": "application/json",
+      "X-DS-API-KEY": apiKey,
+    },
+  });
 
-  // Club - "Club" oder "Mitgliedschaft"
-  if (name.includes("club") || name.includes("mitgliedschaft")) return "Club";
+  if (!res.ok) {
+    throw new Error(`Digistore24 API Fehler: ${res.status}`);
+  }
 
-  // Leicht 2.0
-  if (name.includes("leicht")) return "Leicht 2.0";
+  const data = await res.json();
 
-  // Event 2026
-  if (name.includes("event") || name.includes("ticket")) return "Event 2026";
+  if (data.result === "error") {
+    throw new Error(`Digistore24: ${data.message || "Unbekannter Fehler"}`);
+  }
 
-  return null;
+  return data.data;
+}
+
+/**
+ * Mapping von Digistore24 product_group_name auf unsere Dashboard-Gruppen.
+ */
+const GROUP_NAME_MAP: Record<string, keyof ProductGroupOrders> = {
+  "Abnehm-Coaching (PAC)": "PAC",
+  "Abnehm-Coaching-Light (PACL)": "PACL",
+  "Abnehm-Analyse (Tiny-PAC)": "Tiny-PAC",
+  "Club": "Club",
+  "Leicht 2.0": "Leicht 2.0",
+  "Event 2026": "Event 2026",
+};
+
+/**
+ * Lädt alle Produkte und erstellt eine Map von product_id → Dashboard-Gruppe.
+ */
+async function buildProductGroupMap(): Promise<Map<string, keyof ProductGroupOrders>> {
+  const data = await apiCall("listProducts");
+  const products = data?.products || data?.product_list || [];
+  const map = new Map<string, keyof ProductGroupOrders>();
+
+  for (const p of products) {
+    const groupName = p.product_group_name || "";
+    const dashboardGroup = GROUP_NAME_MAP[groupName];
+    if (dashboardGroup) {
+      map.set(String(p.id), dashboardGroup);
+    }
+  }
+
+  return map;
+}
+
+/**
+ * Lädt ALLE Purchases mit Pagination (page_size: 500).
+ * Maximal 10 Seiten als Sicherheitsnetz.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchAllPurchases(): Promise<any[]> {
+  const MAX_PAGES = 10;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let allPurchases: any[] = [];
+
+  // Erste Seite laden
+  const firstPage = await apiCallWithParams("listPurchases");
+  const purchaseList = firstPage?.purchase_list || [];
+  allPurchases = [...purchaseList];
+
+  const pageCount = parseInt(firstPage?.page_count, 10) || 1;
+
+  // Weitere Seiten laden falls vorhanden
+  if (pageCount > 1) {
+    const pagesToLoad = Math.min(pageCount, MAX_PAGES);
+    for (let page = 2; page <= pagesToLoad; page++) {
+      try {
+        const pageData = await apiCallWithParams("listPurchases", { page: String(page) });
+        const pagePurchases = pageData?.purchase_list || [];
+        allPurchases = [...allPurchases, ...pagePurchases];
+      } catch {
+        // Bei Fehler auf einer Seite weitermachen mit dem was wir haben
+        break;
+      }
+    }
+  }
+
+  return allPurchases;
 }
 
 function emptyOrdersByGroup(): ProductGroupOrders {
@@ -79,11 +152,12 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
   // Alle API-Calls parallel ausführen
-  const [salesSummary, dailyAmounts, buyers, purchases] = await Promise.allSettled([
+  const [salesSummary, dailyAmounts, buyers, purchases, productGroupMap] = await Promise.allSettled([
     apiCall("statsSalesSummary", "POST"),
     apiCall("statsDailyAmounts", "POST"),
     apiCall("listBuyers"),
-    apiCall("listPurchases"),
+    fetchAllPurchases(),
+    buildProductGroupMap(),
   ]);
 
   let revenueToday = 0;
@@ -91,8 +165,10 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   let ordersToday = 0;
   let ordersYesterday = 0;
   let totalCustomers = 0;
-  let activeSubscriptions = 0;
   const ordersByGroup = emptyOrdersByGroup();
+
+  // Produkt-Gruppen-Map auslesen
+  const groupMap = productGroupMap.status === "fulfilled" ? productGroupMap.value : new Map();
 
   // === statsSalesSummary ===
   if (salesSummary.status === "fulfilled") {
@@ -128,24 +204,20 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     } catch { /* ignore */ }
   }
 
-  // === listPurchases ===
+  // === listPurchases (mit Pagination) ===
   if (purchases.status === "fulfilled") {
     try {
-      const purchaseList = purchases.value?.purchase_list;
+      const purchaseList = purchases.value;
       if (Array.isArray(purchaseList)) {
         for (const p of purchaseList) {
           const createdDate = String(p.created_at || "").substring(0, 10);
           if (createdDate === today) {
             ordersToday++;
-            // Produktgruppe zuordnen
-            const group = getProductGroup(p.main_product_name || "");
-            if (group) ordersByGroup[group]++;
+            // Produktgruppe über product_id aus der Map zuordnen
+            const group = groupMap.get(String(p.main_product_id)) as keyof ProductGroupOrders | undefined;
+            if (group && group in ordersByGroup) ordersByGroup[group]++;
           }
           if (createdDate === yesterday) ordersYesterday++;
-
-          if (p.billing_type === "subscription" && p.billing_status === "paying") {
-            activeSubscriptions++;
-          }
         }
       }
     } catch { /* ignore */ }
@@ -158,7 +230,6 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     ordersYesterday,
     ordersByGroup,
     totalCustomers,
-    activeSubscriptions,
     fetchedAt: new Date().toISOString(),
   };
 }

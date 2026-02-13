@@ -34,6 +34,5 @@ export const DUMMY_SALES: import("@/types").SalesData = {
     "Event 2026": 2,
   },
   totalCustomers: 8432,
-  activeSubscriptions: 1247,
   fetchedAt: new Date().toISOString(),
 };

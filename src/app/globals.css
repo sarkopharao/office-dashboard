@@ -7,10 +7,10 @@
   --color-intumind-dark: #222222;
   --color-intumind-gray: #575760;
   --color-intumind-gray-light: #b2b2be;
-  --color-intumind-bg: #f7f8f9;
+  --color-intumind-bg: #f0f2f5;
   --color-intumind-white: #ffffff;
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
 }
 
 html,

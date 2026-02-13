@@ -3,46 +3,62 @@
 interface SalesCardProps {
   label: string;
   value: string | number;
-  icon: string;
-  trend?: "up" | "down" | "neutral";
-  trendValue?: string;
+  sublabel?: string;
+  subvalue?: string | number;
+  variant?: "default" | "highlight";
 }
 
 export default function SalesCard({
   label,
   value,
-  icon,
-  trend,
-  trendValue,
+  sublabel,
+  subvalue,
+  variant = "default",
 }: SalesCardProps) {
-  const trendColor =
-    trend === "up"
-      ? "text-green-500"
-      : trend === "down"
-        ? "text-red-400"
-        : "text-intumind-gray-light";
-
-  const trendArrow =
-    trend === "up" ? "↑" : trend === "down" ? "↓" : "";
+  const isHighlight = variant === "highlight";
 
   return (
-    <div className="bg-intumind-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-intumind-gray text-sm font-medium">{label}</span>
-        <span className="text-xl">{icon}</span>
-      </div>
-      <div className="flex items-end justify-between">
-        <span className="text-3xl font-bold text-intumind-dark number-transition">
-          {typeof value === "number"
-            ? value.toLocaleString("de-DE")
-            : value}
-        </span>
-        {trend && trendValue && (
-          <span className={`text-sm font-medium ${trendColor}`}>
-            {trendArrow} {trendValue}
+    <div
+      className={`rounded-2xl p-6 flex flex-col justify-center items-center text-center min-h-[140px] ${
+        isHighlight
+          ? "bg-gradient-to-br from-intumind-blue to-intumind-blue-dark text-white shadow-lg"
+          : "bg-white shadow-sm"
+      }`}
+    >
+      <span
+        className={`text-4xl font-extrabold tracking-tight leading-none number-transition ${
+          isHighlight ? "text-white" : "text-intumind-dark"
+        }`}
+      >
+        {typeof value === "number" ? value.toLocaleString("de-DE") : value}
+      </span>
+      <span
+        className={`text-xs font-semibold tracking-widest uppercase mt-2 ${
+          isHighlight ? "text-white/80" : "text-intumind-gray-light"
+        }`}
+      >
+        {label}
+      </span>
+
+      {sublabel && subvalue !== undefined && (
+        <>
+          <div className={`w-8 h-px my-3 ${isHighlight ? "bg-white/30" : "bg-gray-200"}`} />
+          <span
+            className={`text-2xl font-bold leading-none ${
+              isHighlight ? "text-white" : "text-intumind-dark"
+            }`}
+          >
+            {typeof subvalue === "number" ? subvalue.toLocaleString("de-DE") : subvalue}
           </span>
-        )}
-      </div>
+          <span
+            className={`text-xs font-semibold tracking-widest uppercase mt-1 ${
+              isHighlight ? "text-white/60" : "text-intumind-gray-light"
+            }`}
+          >
+            {sublabel}
+          </span>
+        </>
+      )}
     </div>
   );
 }

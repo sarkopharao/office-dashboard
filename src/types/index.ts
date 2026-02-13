@@ -14,7 +14,6 @@ export interface SalesData {
   ordersYesterday: number;
   ordersByGroup: ProductGroupOrders;
   totalCustomers: number;
-  activeSubscriptions: number;
   fetchedAt: string;
 }
 
