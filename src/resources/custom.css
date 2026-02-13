@@ -203,8 +203,12 @@ html, body {
     height: auto !important;
   }
 
-  .header-clock {
-    display: none !important;
+  .header-clock .clock-time {
+    font-size: 0.85rem !important;
+  }
+
+  .header-clock .clock-date {
+    font-size: 0.55rem !important;
   }
 
   .header-buttons a,

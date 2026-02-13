@@ -34,6 +34,7 @@ export default function Clock() {
     <Column style={{ textAlign: "center" }}>
       <Text
         variant="body-strong-m"
+        className="clock-time"
         style={{
           color: "#ffffff",
           fontVariantNumeric: "tabular-nums",
@@ -44,6 +45,7 @@ export default function Clock() {
       </Text>
       <Text
         variant="label-default-s"
+        className="clock-date"
         style={{ color: "#B2BDD1", fontSize: "0.75rem" }}
       >
         {day}, {date}. {month} {year}
