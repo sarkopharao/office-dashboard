@@ -20,52 +20,64 @@ export default function MobileFooter() {
     <div
       className="mobile-footer"
       style={{
+        flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        gap: "12px",
-        padding: "1rem 1.5rem 2rem",
+        gap: "16px",
+        padding: "1.5rem 1.5rem 2rem",
       }}
     >
-      <a
-        href="/fotos"
+      <div style={{ display: "flex", gap: "12px" }}>
+        <a
+          href="/fotos"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            background: "#009399",
+            color: "#ffffff",
+            padding: "0.7rem 1.6rem",
+            borderRadius: "9999px",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            textDecoration: "none",
+            boxShadow: "0 2px 8px rgba(0, 147, 153, 0.3)",
+          }}
+        >
+          <span>📸</span>
+          Teamfotos
+        </a>
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            background: "rgba(39, 49, 63, 0.08)",
+            border: "1px solid rgba(39, 49, 63, 0.15)",
+            color: "#505359",
+            cursor: loggingOut ? "wait" : "pointer",
+            fontFamily: "var(--font-body), sans-serif",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            padding: "0.7rem 1.6rem",
+            borderRadius: "9999px",
+          }}
+        >
+          <span>👋</span>
+          Abmelden
+        </button>
+      </div>
+      <span
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          background: "rgba(0, 147, 153, 0.1)",
-          color: "#009399",
-          padding: "0.6rem 1.4rem",
-          borderRadius: "9999px",
-          fontSize: "0.85rem",
-          fontWeight: 600,
-          textDecoration: "none",
-          border: "1px solid rgba(0, 147, 153, 0.2)",
-        }}
-      >
-        <span>📸</span>
-        Teamfotos
-      </a>
-      <button
-        onClick={handleLogout}
-        disabled={loggingOut}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          background: "rgba(178, 189, 209, 0.1)",
-          border: "1px solid rgba(178, 189, 209, 0.25)",
-          color: "#8C919C",
-          cursor: loggingOut ? "wait" : "pointer",
+          color: "#B2BDD1",
+          fontSize: "0.7rem",
           fontFamily: "var(--font-body), sans-serif",
-          fontSize: "0.85rem",
-          fontWeight: 600,
-          padding: "0.6rem 1.4rem",
-          borderRadius: "9999px",
+          fontWeight: 500,
         }}
       >
-        <span>👋</span>
-        Abmelden
-      </button>
+        Made with ❤️ by Marc
+      </span>
     </div>
   );
 }
