@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
+import { createSignedToken } from "@/lib/token";
 
 // POST: Admin-Login
 export async function POST(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = crypto.randomUUID();
+    const token = createSignedToken();
     const response = NextResponse.json({ success: true });
 
     response.cookies.set("admin_token", token, {
@@ -41,8 +41,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE: Logout
+// DELETE: Logout (Supabase + Legacy-Cookie)
 export async function DELETE() {
+  // Supabase-Session beenden (falls vorhanden)
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Supabase nicht konfiguriert – nur Cookie löschen
+  }
+
   const response = NextResponse.json({ success: true });
   response.cookies.delete("admin_token");
   return response;

@@ -1,10 +1,65 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Flex, Text } from "@once-ui-system/core";
+import { Flex } from "@once-ui-system/core";
 import Clock from "./Clock";
+import { createClient } from "@/lib/supabase/client";
+
+interface UserState {
+  loggedIn: boolean;
+  isAdmin: boolean;
+}
 
 export default function Header() {
+  const [user, setUser] = useState<UserState | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+
+        if (supabaseUser?.email) {
+          const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
+            .split(",")
+            .map((e) => e.trim().toLowerCase())
+            .filter(Boolean);
+          setUser({
+            loggedIn: true,
+            isAdmin: adminEmails.includes(supabaseUser.email.toLowerCase()),
+          });
+          return;
+        }
+      } catch {
+        // Supabase nicht verfügbar
+      }
+
+      // Legacy-Cookie prüfen
+      if (document.cookie.includes("admin_token=")) {
+        setUser({ loggedIn: true, isAdmin: true });
+        return;
+      }
+
+      setUser({ loggedIn: false, isAdmin: false });
+    };
+
+    checkUser();
+  }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Supabase nicht verfügbar
+    }
+    await fetch("/api/auth", { method: "DELETE" });
+    window.location.href = "/login";
+  };
+
   return (
     <Flex
       as="header"
@@ -14,7 +69,8 @@ export default function Header() {
       paddingY="m"
       style={{ background: "#27313F" }}
     >
-      <Flex vertical="center" gap="m">
+      {/* Links: Logo */}
+      <Flex vertical="center" style={{ flex: 1 }}>
         <Image
           src="/intumind-design/intumind-logo-laenglich-white.png"
           alt="intumind"
@@ -23,18 +79,60 @@ export default function Header() {
           priority
         />
       </Flex>
-      <Text
-        variant="label-strong-s"
-        style={{
-          color: "#B2BDD1",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          fontFamily: "var(--font-heading)",
-        }}
-      >
-        Office Dashboard
-      </Text>
+
+      {/* Mitte: Uhr + Datum */}
       <Clock />
+
+      {/* Rechts: Buttons */}
+      <Flex vertical="center" gap="8" style={{ flex: 1, justifyContent: "flex-end" }}>
+        {user?.loggedIn && (
+          <>
+            <a
+              href="/fotos"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                background: "rgba(0, 147, 153, 0.15)",
+                color: "#009399",
+                padding: "0.4rem 1rem",
+                borderRadius: "9999px",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "background 0.2s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ fontSize: "0.8rem" }}>📸</span>
+              Teamfotos
+            </a>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                background: "rgba(178, 189, 209, 0.12)",
+                border: "1px solid rgba(178, 189, 209, 0.2)",
+                color: "#B2BDD1",
+                cursor: loggingOut ? "wait" : "pointer",
+                fontFamily: "var(--font-body), sans-serif",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                padding: "0.4rem 1rem",
+                borderRadius: "9999px",
+                transition: "background 0.2s, color 0.2s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ fontSize: "0.8rem" }}>👋</span>
+              Abmelden
+            </button>
+          </>
+        )}
+      </Flex>
     </Flex>
   );
 }

@@ -32,12 +32,13 @@ export async function GET() {
   }
 }
 
-// POST: Foto hochladen
+// POST: Foto hochladen (jeder eingeloggte @intumind.de Mitarbeiter)
 export async function POST(request: NextRequest) {
   try {
-    // Einfache Auth-Prüfung
-    const authCookie = request.cookies.get("admin_token");
-    if (!authCookie) {
+    // Dual-Auth: Supabase ODER Legacy-Cookie
+    const { checkAuth } = await import("@/lib/auth");
+    const auth = await checkAuth(request);
+    if (!auth.authenticated) {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
     }
 

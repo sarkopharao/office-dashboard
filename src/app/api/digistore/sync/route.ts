@@ -114,22 +114,38 @@ export async function POST() {
       salesData.revenueLastMonth = historyFallback.revenueLastMonth;
     }
 
+    // === SCHUTZ: Alten Cache laden für Fallback-Vergleiche ===
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let oldCache: any = null;
+    try {
+      const oldRaw = await readFile(CACHE_FILE, "utf-8");
+      oldCache = JSON.parse(oldRaw);
+    } catch { /* Kein alter Cache vorhanden */ }
+
+    // === SCHUTZ: Orders aus altem Cache bewahren wenn API keine liefert ===
+    // Orders können nicht aus History abgeleitet werden (nur Revenue wird gespeichert).
+    // Wenn die API 0 Orders zurückgibt, behalten wir die alten Werte.
+    if (salesData.ordersToday === 0 && oldCache?.ordersToday > 0) {
+      salesData.ordersToday = oldCache.ordersToday;
+      salesData.ordersYesterday = oldCache.ordersYesterday;
+      salesData.ordersByGroup = oldCache.ordersByGroup;
+    }
+    if (salesData.totalCustomers === 0 && oldCache?.totalCustomers > 0) {
+      salesData.totalCustomers = oldCache.totalCustomers;
+    }
+
     // === SCHUTZ: Alten Cache nicht mit reinen Nullwerten überschreiben ===
     // Wenn sowohl API als auch History keine Revenue-Daten haben, aber der alte Cache
     // welche hat, behalten wir den alten Cache und aktualisieren nur dailyRevenue.
     let usedOldCache = false;
     if (salesData.revenueToday === 0 && salesData.revenueThisMonth === 0) {
-      try {
-        const oldRaw = await readFile(CACHE_FILE, "utf-8");
-        const oldCache = JSON.parse(oldRaw);
-        if (oldCache.revenueToday > 0 || oldCache.revenueThisMonth > 0) {
-          // Alten Cache behalten, nur dailyRevenue und fetchedAt aktualisieren
-          oldCache.dailyRevenue = salesData.dailyRevenue;
-          oldCache.fetchedAt = salesData.fetchedAt;
-          await writeFile(CACHE_FILE, JSON.stringify(oldCache, null, 2));
-          usedOldCache = true;
-        }
-      } catch { /* Kein alter Cache vorhanden, normal weitermachen */ }
+      if (oldCache && (oldCache.revenueToday > 0 || oldCache.revenueThisMonth > 0)) {
+        // Alten Cache behalten, nur dailyRevenue und fetchedAt aktualisieren
+        oldCache.dailyRevenue = salesData.dailyRevenue;
+        oldCache.fetchedAt = salesData.fetchedAt;
+        await writeFile(CACHE_FILE, JSON.stringify(oldCache, null, 2));
+        usedOldCache = true;
+      }
     }
 
     if (!usedOldCache) {

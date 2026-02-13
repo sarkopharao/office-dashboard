@@ -31,7 +31,7 @@ export default function Clock() {
   const minutes = time.getMinutes().toString().padStart(2, "0");
 
   return (
-    <Column style={{ textAlign: "right" }}>
+    <Column style={{ textAlign: "center" }}>
       <Text
         variant="body-strong-m"
         style={{

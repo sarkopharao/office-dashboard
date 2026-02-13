@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import SalesGrid from "@/components/SalesGrid";
 import Slideshow from "@/components/Slideshow";
-import MotivationalQuote from "@/components/MotivationalQuote";
 import DashboardBackground from "@/components/DashboardBackground";
 
 export default function DashboardPage() {
@@ -15,19 +14,18 @@ export default function DashboardPage() {
         {/* Wechselnder Hintergrund über gesamte Breite */}
         <DashboardBackground />
 
-        {/* Left Side: Sales Data + Quote (scrollbar) */}
+        {/* Left Side: Sales Data (volle Höhe, kein Scroll) */}
         <div
-          className="dashboard-scroll"
           style={{
-            width: "42%",
+            width: "50%",
             position: "relative",
             zIndex: 10,
-            overflowY: "auto",
-            overflowX: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
           <SalesGrid />
-          <MotivationalQuote />
         </div>
 
         {/* Right Side: Team Slideshow */}

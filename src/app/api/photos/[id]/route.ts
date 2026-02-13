@@ -4,15 +4,20 @@ import path from "path";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
-// DELETE: Foto löschen
+// DELETE: Foto löschen (nur Admins)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authCookie = request.cookies.get("admin_token");
-    if (!authCookie) {
+    // Dual-Auth + Admin-Rolle erforderlich
+    const { checkAuth } = await import("@/lib/auth");
+    const auth = await checkAuth(request);
+    if (!auth.authenticated) {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+    }
+    if (auth.role !== "admin") {
+      return NextResponse.json({ error: "Keine Berechtigung – nur Admins können Fotos löschen" }, { status: 403 });
     }
 
     const { id } = await params;

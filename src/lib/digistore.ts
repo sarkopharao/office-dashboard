@@ -1,6 +1,7 @@
 import type { SalesData, ProductGroupOrders, DailyRevenue } from "@/types";
 
 const BASE_URL = "https://www.digistore24.com/api/call";
+const API_TIMEOUT = 10000; // 10 Sekunden Timeout für API-Calls
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function apiCall(endpoint: string, method: "GET" | "POST" = "GET"): Promise<any> {
@@ -12,25 +13,38 @@ async function apiCall(endpoint: string, method: "GET" | "POST" = "GET"): Promis
 
   const url = `${BASE_URL}/${endpoint}?language=de`;
 
-  const res = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-DS-API-KEY": apiKey,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-  if (!res.ok) {
-    throw new Error(`Digistore24 API Fehler: ${res.status}`);
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-DS-API-KEY": apiKey,
+      },
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Digistore24 API Fehler: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (data.result === "error") {
+      throw new Error(`Digistore24: ${data.message || "Unbekannter Fehler"}`);
+    }
+
+    return data.data;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(`Digistore24 API Timeout: ${endpoint} nach ${API_TIMEOUT / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await res.json();
-
-  if (data.result === "error") {
-    throw new Error(`Digistore24: ${data.message || "Unbekannter Fehler"}`);
-  }
-
-  return data.data;
 }
 
 /**
@@ -50,56 +64,67 @@ async function apiCallWithParams(endpoint: string, params: Record<string, string
     url.searchParams.set(key, value);
   }
 
-  const res = await fetch(url.toString(), {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-DS-API-KEY": apiKey,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-  if (!res.ok) {
-    throw new Error(`Digistore24 API Fehler: ${res.status}`);
+  try {
+    const res = await fetch(url.toString(), {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-DS-API-KEY": apiKey,
+      },
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Digistore24 API Fehler: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (data.result === "error") {
+      throw new Error(`Digistore24: ${data.message || "Unbekannter Fehler"}`);
+    }
+
+    return data.data;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(`Digistore24 API Timeout: ${endpoint} nach ${API_TIMEOUT / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await res.json();
-
-  if (data.result === "error") {
-    throw new Error(`Digistore24: ${data.message || "Unbekannter Fehler"}`);
-  }
-
-  return data.data;
 }
 
 /**
- * Mapping von Digistore24 product_group_name auf unsere Dashboard-Gruppen.
+ * Ordnet einen main_product_name aus listPurchases einer Dashboard-Produktgruppe zu.
+ * Verwendet Substring-Matching statt listProducts-API (die oft timed out).
+ *
+ * Bekannte Produktnamen (aus der Digistore24 API):
+ * - "intumind Community Event Classic-Ticket" / "VIP-Ticket" → Event 2026
+ * - "Abnehm-Analyse | PAID | DIRECT | P50" → Tiny-PAC
+ * - "Leicht 2.0 | PAID | Halbjahresabo" → Leicht 2.0
+ * - PAC / PACL / Club werden über Keywords erkannt
  */
-const GROUP_NAME_MAP: Record<string, keyof ProductGroupOrders> = {
-  "Abnehm-Coaching (PAC)": "PAC",
-  "Abnehm-Coaching-Light (PACL)": "PACL",
-  "Abnehm-Analyse (Tiny-PAC)": "Tiny-PAC",
-  "Club": "Club",
-  "Leicht 2.0": "Leicht 2.0",
-  "Event 2026": "Event 2026",
-};
+const PRODUCT_NAME_RULES: { match: (name: string) => boolean; group: keyof ProductGroupOrders }[] = [
+  { match: (n) => n.includes("Community Event") || n.includes("Event"), group: "Event 2026" },
+  { match: (n) => n.includes("Abnehm-Analyse") || n.includes("Tiny-PAC"), group: "Tiny-PAC" },
+  { match: (n) => n.includes("Leicht 2.0"), group: "Leicht 2.0" },
+  { match: (n) => n.includes("Club"), group: "Club" },
+  // PACL vor PAC prüfen (PACL enthält auch "PAC")
+  { match: (n) => n.includes("PACL") || n.includes("Coaching-Light") || n.includes("Coaching Light"), group: "PACL" },
+  { match: (n) => n.includes("PAC") || n.includes("Abnehm-Coaching") || n.includes("Coaching"), group: "PAC" },
+];
 
-/**
- * Lädt alle Produkte und erstellt eine Map von product_id → Dashboard-Gruppe.
- */
-async function buildProductGroupMap(): Promise<Map<string, keyof ProductGroupOrders>> {
-  const data = await apiCall("listProducts");
-  const products = data?.products || data?.product_list || [];
-  const map = new Map<string, keyof ProductGroupOrders>();
-
-  for (const p of products) {
-    const groupName = p.product_group_name || "";
-    const dashboardGroup = GROUP_NAME_MAP[groupName];
-    if (dashboardGroup) {
-      map.set(String(p.id), dashboardGroup);
+function matchProductGroup(productName: string): keyof ProductGroupOrders | null {
+  for (const rule of PRODUCT_NAME_RULES) {
+    if (rule.match(productName)) {
+      return rule.group;
     }
   }
-
-  return map;
+  return null;
 }
 
 /**
@@ -152,13 +177,12 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-  // Alle API-Calls parallel ausführen
-  const [salesSummary, dailyAmounts, buyers, purchases, productGroupMap] = await Promise.allSettled([
+  // Alle API-Calls parallel ausführen (ohne listProducts – Zuordnung über main_product_name)
+  const [salesSummary, dailyAmounts, buyers, purchases] = await Promise.allSettled([
     apiCall("statsSalesSummary", "POST"),
     apiCall("statsDailyAmounts", "POST"),
     apiCall("listBuyers"),
     fetchAllPurchases(),
-    buildProductGroupMap(),
   ]);
 
   let revenueToday = 0;
@@ -181,9 +205,6 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   const thisMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonthPrefix = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
-
-  // Produkt-Gruppen-Map auslesen
-  const groupMap = productGroupMap.status === "fulfilled" ? productGroupMap.value : new Map();
 
   // === statsSalesSummary ===
   if (salesSummary.status === "fulfilled") {
@@ -277,9 +298,10 @@ export async function fetchAllSalesData(): Promise<SalesData> {
           const createdDate = String(p.created_at || "").substring(0, 10);
           if (createdDate === today) {
             ordersToday++;
-            // Produktgruppe über product_id aus der Map zuordnen
-            const group = groupMap.get(String(p.main_product_id)) as keyof ProductGroupOrders | undefined;
-            if (group && group in ordersByGroup) ordersByGroup[group]++;
+            // Produktgruppe direkt über main_product_name zuordnen
+            const productName = String(p.main_product_name || "");
+            const group = matchProductGroup(productName);
+            if (group) ordersByGroup[group]++;
           }
           if (createdDate === yesterday) ordersYesterday++;
         }

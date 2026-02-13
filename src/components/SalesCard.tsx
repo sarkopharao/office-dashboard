@@ -23,10 +23,10 @@ export default function SalesCard({
     <Column
       horizontal="center"
       vertical="center"
-      padding="l"
+      padding="m"
       radius="l"
       style={{
-        minHeight: "140px",
+        minHeight: "100px",
         textAlign: "center",
         ...(isHighlight
           ? {
@@ -46,7 +46,7 @@ export default function SalesCard({
         className="number-transition"
         style={{
           color: isHighlight ? "#ffffff" : "#27313F",
-          fontSize: "2.25rem",
+          fontSize: "1.75rem",
           fontWeight: 800,
           letterSpacing: "-0.025em",
           lineHeight: 1,
@@ -60,8 +60,8 @@ export default function SalesCard({
           color: isHighlight ? "rgba(255,255,255,0.8)" : "#B2BDD1",
           letterSpacing: "0.1em",
           textTransform: "uppercase",
-          marginTop: "0.5rem",
-          fontSize: "0.75rem",
+          marginTop: "0.25rem",
+          fontSize: "0.7rem",
         }}
       >
         {label}
@@ -74,14 +74,14 @@ export default function SalesCard({
               width: "2rem",
               height: "1px",
               background: isHighlight ? "rgba(255,255,255,0.3)" : "#e5e7eb",
-              margin: "0.75rem 0",
+              margin: "0.4rem 0",
             }}
           />
           <Text
             variant="heading-strong-s"
             style={{
               color: isHighlight ? "#ffffff" : "#27313F",
-              fontSize: "1.5rem",
+              fontSize: "1.15rem",
               fontWeight: 700,
               lineHeight: 1,
             }}

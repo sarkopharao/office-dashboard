@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { DUMMY_SALES } from "@/lib/constants";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
@@ -15,9 +14,10 @@ export async function GET() {
       return NextResponse.json(salesData);
     }
   } catch {
-    // Bei Fehler Dummy-Daten zurückgeben
+    // Kein Cache vorhanden
   }
 
-  // Fallback: Dummy-Daten
-  return NextResponse.json(DUMMY_SALES);
+  // Kein Cache: 204 No Content → SalesGrid zeigt Geldregen-Animation
+  // bis der erste Sync frische Daten liefert
+  return new NextResponse(null, { status: 204 });
 }

@@ -136,15 +136,17 @@ export default function RevenueChart({ dailyRevenue }: RevenueChartProps) {
   return (
     <Column
       radius="l"
-      padding="l"
+      padding="m"
       style={{
+        flex: 1,
+        minHeight: 0,
         background: "rgba(255, 255, 255, 0.75)",
         backdropFilter: "blur(4px)",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
       }}
     >
       {/* Header */}
-      <Flex horizontal="between" vertical="center" style={{ marginBottom: "1rem" }}>
+      <Flex horizontal="between" vertical="center" style={{ marginBottom: "0.5rem", flexShrink: 0 }}>
         <Text
           variant="label-strong-s"
           style={{
@@ -176,8 +178,8 @@ export default function RevenueChart({ dailyRevenue }: RevenueChartProps) {
         </Flex>
       </Flex>
 
-      {/* Chart */}
-      <div style={{ width: "100%", height: 180 }}>
+      {/* Chart – füllt restlichen Platz */}
+      <div style={{ width: "100%", flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
