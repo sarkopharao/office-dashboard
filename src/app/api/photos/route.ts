@@ -1,32 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readdir, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import crypto from "crypto";
 
-const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+const SIGNED_URL_EXPIRES = 3600; // 1 Stunde (Slideshow refresht alle 60s)
 
-// GET: Liste aller Fotos
+// GET: Liste aller Fotos mit Signed URLs
 export async function GET() {
   try {
-    if (!existsSync(UPLOADS_DIR)) {
+    const { data: photos, error } = await supabaseAdmin
+      .from("photos")
+      .select("*")
+      .order("uploaded_at", { ascending: true });
+
+    if (error) {
+      console.error("Photos DB Fehler:", error.message);
       return NextResponse.json([]);
     }
 
-    const files = await readdir(UPLOADS_DIR);
-    const photos = files
-      .filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f))
-      .map((filename, index) => ({
-        id: filename.replace(/\.[^.]+$/, ""),
-        filename,
-        originalName: filename,
-        uploadedAt: new Date().toISOString(),
-        sortOrder: index,
-      }));
+    if (!photos || photos.length === 0) {
+      return NextResponse.json([]);
+    }
 
-    return NextResponse.json(photos);
+    // Signed URLs für alle Fotos auf einmal generieren
+    const photosWithUrls = await Promise.all(
+      photos.map(async (photo) => {
+        const { data: signedUrlData } = await supabaseAdmin.storage
+          .from("photos")
+          .createSignedUrl(photo.filename, SIGNED_URL_EXPIRES);
+
+        return {
+          id: photo.id,
+          filename: photo.filename,
+          originalName: photo.original_name,
+          uploadedAt: photo.uploaded_at,
+          sortOrder: photo.sort_order,
+          url: signedUrlData?.signedUrl || "",
+        };
+      })
+    );
+
+    return NextResponse.json(photosWithUrls);
   } catch {
     return NextResponse.json([]);
   }
@@ -68,18 +83,54 @@ export async function POST(request: NextRequest) {
     const id = crypto.randomUUID();
     const filename = `${id}.${ext}`;
 
-    if (!existsSync(UPLOADS_DIR)) {
-      await mkdir(UPLOADS_DIR, { recursive: true });
+    // In Supabase Storage hochladen
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("photos")
+      .upload(filename, buffer, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Storage Upload Fehler:", uploadError.message);
+      return NextResponse.json(
+        { error: "Upload fehlgeschlagen" },
+        { status: 500 }
+      );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(UPLOADS_DIR, filename), buffer);
+    // Metadaten in DB speichern
+    const { error: dbError } = await supabaseAdmin
+      .from("photos")
+      .insert({
+        id,
+        filename,
+        original_name: file.name,
+        uploaded_by: auth.email || null,
+      });
+
+    if (dbError) {
+      // Storage-Datei wieder löschen bei DB-Fehler
+      await supabaseAdmin.storage.from("photos").remove([filename]);
+      console.error("Photos DB Insert Fehler:", dbError.message);
+      return NextResponse.json(
+        { error: "Upload fehlgeschlagen" },
+        { status: 500 }
+      );
+    }
+
+    // Signed URL für Response generieren
+    const { data: signedUrlData } = await supabaseAdmin.storage
+      .from("photos")
+      .createSignedUrl(filename, SIGNED_URL_EXPIRES);
 
     return NextResponse.json({
       id,
       filename,
       originalName: file.name,
       uploadedAt: new Date().toISOString(),
+      url: signedUrlData?.signedUrl || "",
     });
   } catch {
     return NextResponse.json(

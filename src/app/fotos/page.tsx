@@ -360,7 +360,7 @@ export default function AdminPage() {
                 >
                   <div style={{ position: "relative" }}>
                     <img
-                      src={`/api/photos/${photo.id}/file`}
+                      src={photo.url}
                       alt={photo.originalName}
                       style={{
                         width: "100%",
@@ -393,7 +393,7 @@ export default function AdminPage() {
                         }}
                       >
                         <button
-                          onClick={() => handleDelete(photo.id.toString())}
+                          onClick={() => handleDelete(photo.id)}
                           style={{
                             opacity: 0,
                             background: "#ef4444",

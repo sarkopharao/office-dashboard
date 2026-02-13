@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
-
-const CACHE_FILE = path.join(process.cwd(), "data", "sales-cache.json");
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
-    // Versuche gecachte Daten zu lesen
-    if (existsSync(CACHE_FILE)) {
-      const data = await readFile(CACHE_FILE, "utf-8");
-      const salesData = JSON.parse(data);
-      return NextResponse.json(salesData);
-    }
-  } catch {
-    // Kein Cache vorhanden
-  }
+    const { data, error } = await supabaseAdmin
+      .from("sales_cache")
+      .select("data")
+      .eq("id", 1)
+      .single();
 
-  // Kein Cache: 204 No Content → SalesGrid zeigt Geldregen-Animation
-  // bis der erste Sync frische Daten liefert
-  return new NextResponse(null, { status: 204 });
+    if (error || !data) {
+      // Kein Cache vorhanden → 204 No Content
+      // SalesGrid zeigt Geldregen-Animation bis der erste Sync Daten liefert
+      return new NextResponse(null, { status: 204 });
+    }
+
+    return NextResponse.json(data.data);
+  } catch {
+    return new NextResponse(null, { status: 204 });
+  }
 }

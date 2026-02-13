@@ -1,43 +1,54 @@
 import { NextResponse } from "next/server";
 import { fetchAllSalesData } from "@/lib/digistore";
-import { writeFile, readFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const CACHE_FILE = path.join(DATA_DIR, "sales-cache.json");
-const HISTORY_FILE = path.join(DATA_DIR, "revenue-history.json");
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /**
- * Liest das Revenue-History-File: { "2026-02-06": 6016.19, ... }
- * Hier werden Tagesumsätze persistent gespeichert, da die Digistore24 API
- * nur die Daten des aktuellen Abrechnungszeitraums zurückgibt.
+ * Liest die Revenue-History aus der Supabase-Tabelle revenue_history.
+ * Rückgabe: { "2026-02-06": 6016.19, ... }
  */
 async function loadHistory(): Promise<Record<string, number>> {
-  try {
-    const raw = await readFile(HISTORY_FILE, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return {};
+  const { data, error } = await supabaseAdmin
+    .from("revenue_history")
+    .select("day, amount");
+
+  if (error || !data) return {};
+
+  const history: Record<string, number> = {};
+  for (const row of data) {
+    history[row.day] = parseFloat(row.amount);
   }
+  return history;
 }
 
 /**
- * Speichert History zurück. Behält maximal 60 Tage.
+ * Speichert/aktualisiert Tagesumsätze in revenue_history.
+ * Behält maximal 60 Tage (alte Einträge werden gelöscht).
  */
 async function saveHistory(history: Record<string, number>): Promise<void> {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 60);
   const cutoffStr = cutoff.toISOString().split("T")[0];
 
-  const trimmed: Record<string, number> = {};
-  for (const [day, amount] of Object.entries(history)) {
-    if (day >= cutoffStr) {
-      trimmed[day] = amount;
-    }
-  }
+  // Alte Einträge löschen
+  await supabaseAdmin
+    .from("revenue_history")
+    .delete()
+    .lt("day", cutoffStr);
 
-  await writeFile(HISTORY_FILE, JSON.stringify(trimmed, null, 2));
+  // Aktuelle Einträge upserten (nur die innerhalb der 60 Tage)
+  const rows = Object.entries(history)
+    .filter(([day]) => day >= cutoffStr)
+    .map(([day, amount]) => ({
+      day,
+      amount,
+      updated_at: new Date().toISOString(),
+    }));
+
+  if (rows.length > 0) {
+    await supabaseAdmin
+      .from("revenue_history")
+      .upsert(rows, { onConflict: "day" });
+  }
 }
 
 /**
@@ -71,11 +82,6 @@ export async function POST() {
   try {
     const salesData = await fetchAllSalesData();
 
-    // Daten-Verzeichnis sicherstellen
-    if (!existsSync(DATA_DIR)) {
-      await mkdir(DATA_DIR, { recursive: true });
-    }
-
     // Revenue-History laden und mit aktuellen API-Daten mergen
     const history = await loadHistory();
 
@@ -97,8 +103,6 @@ export async function POST() {
       .sort((a, b) => a.day.localeCompare(b.day));
 
     // === FALLBACK: Revenue aus History berechnen wenn API-Daten fehlen ===
-    // Wenn die Digistore24 API down ist, kommen alle Revenue-Werte als 0 zurück.
-    // In dem Fall nutzen wir die gespeicherten Tagesumsätze aus der History.
     const historyFallback = deriveRevenueFromHistory(history);
 
     if (salesData.revenueToday === 0 && historyFallback.revenueToday > 0) {
@@ -118,13 +122,15 @@ export async function POST() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let oldCache: any = null;
     try {
-      const oldRaw = await readFile(CACHE_FILE, "utf-8");
-      oldCache = JSON.parse(oldRaw);
+      const { data } = await supabaseAdmin
+        .from("sales_cache")
+        .select("data")
+        .eq("id", 1)
+        .single();
+      if (data) oldCache = data.data;
     } catch { /* Kein alter Cache vorhanden */ }
 
     // === SCHUTZ: Orders aus altem Cache bewahren wenn API keine liefert ===
-    // Orders können nicht aus History abgeleitet werden (nur Revenue wird gespeichert).
-    // Wenn die API 0 Orders zurückgibt, behalten wir die alten Werte.
     if (salesData.ordersToday === 0 && oldCache?.ordersToday > 0) {
       salesData.ordersToday = oldCache.ordersToday;
       salesData.ordersYesterday = oldCache.ordersYesterday;
@@ -135,22 +141,26 @@ export async function POST() {
     }
 
     // === SCHUTZ: Alten Cache nicht mit reinen Nullwerten überschreiben ===
-    // Wenn sowohl API als auch History keine Revenue-Daten haben, aber der alte Cache
-    // welche hat, behalten wir den alten Cache und aktualisieren nur dailyRevenue.
     let usedOldCache = false;
     if (salesData.revenueToday === 0 && salesData.revenueThisMonth === 0) {
       if (oldCache && (oldCache.revenueToday > 0 || oldCache.revenueThisMonth > 0)) {
         // Alten Cache behalten, nur dailyRevenue und fetchedAt aktualisieren
         oldCache.dailyRevenue = salesData.dailyRevenue;
         oldCache.fetchedAt = salesData.fetchedAt;
-        await writeFile(CACHE_FILE, JSON.stringify(oldCache, null, 2));
+
+        await supabaseAdmin
+          .from("sales_cache")
+          .upsert({ id: 1, data: oldCache, updated_at: new Date().toISOString() });
+
         usedOldCache = true;
       }
     }
 
     if (!usedOldCache) {
       // Sales-Cache speichern (mit angereicherten dailyRevenue aus History)
-      await writeFile(CACHE_FILE, JSON.stringify(salesData, null, 2));
+      await supabaseAdmin
+        .from("sales_cache")
+        .upsert({ id: 1, data: salesData, updated_at: new Date().toISOString() });
     }
 
     return NextResponse.json({

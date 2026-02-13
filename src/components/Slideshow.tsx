@@ -25,14 +25,14 @@ const LAYOUT_VARIANTS: LayoutVariant[] = [
 
 
 interface PolaroidProps {
-  photoId: number;
+  url: string;
   alt: string;
   rotation: number;
   style?: React.CSSProperties;
   className?: string;
 }
 
-function Polaroid({ photoId, alt, rotation, style: extraStyle, className = "" }: PolaroidProps) {
+function Polaroid({ url, alt, rotation, style: extraStyle, className = "" }: PolaroidProps) {
   return (
     <div
       className={className}
@@ -48,7 +48,7 @@ function Polaroid({ photoId, alt, rotation, style: extraStyle, className = "" }:
       }}
     >
       <img
-        src={`/api/photos/${photoId}/file`}
+        src={url}
         alt={alt}
         style={{
           width: "100%",
@@ -119,8 +119,10 @@ export default function Slideshow() {
     if (photos.length < 2) return;
     for (let i = 1; i <= 3; i++) {
       const nextIdx = (currentIndex + i) % photos.length;
-      const img = new window.Image();
-      img.src = `/api/photos/${photos[nextIdx].id}/file`;
+      if (photos[nextIdx].url) {
+        const img = new window.Image();
+        img.src = photos[nextIdx].url;
+      }
     }
   }, [currentIndex, photos]);
 
@@ -237,7 +239,7 @@ export default function Slideshow() {
     if (photos.length < 2) {
       return (
         <Polaroid
-          photoId={photos[currentIndex].id}
+          url={photos[currentIndex].url}
           alt={photos[currentIndex].originalName}
           rotation={-1}
           style={{ width: "75%", height: "82%" }}
@@ -251,7 +253,7 @@ export default function Slideshow() {
           <div style={{ width: "90%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Hinteres Foto – rechts unten */}
             <Polaroid
-              photoId={photos[secondIndex].id}
+              url={photos[secondIndex].url}
               alt={photos[secondIndex].originalName}
               rotation={5}
               style={{
@@ -265,7 +267,7 @@ export default function Slideshow() {
             />
             {/* Vorderes Foto – links oben */}
             <Polaroid
-              photoId={photos[currentIndex].id}
+              url={photos[currentIndex].url}
               alt={photos[currentIndex].originalName}
               rotation={-3}
               style={{
@@ -285,7 +287,7 @@ export default function Slideshow() {
           <div style={{ width: "92%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Linkes Foto */}
             <Polaroid
-              photoId={photos[currentIndex].id}
+              url={photos[currentIndex].url}
               alt={photos[currentIndex].originalName}
               rotation={-2}
               style={{
@@ -299,7 +301,7 @@ export default function Slideshow() {
             />
             {/* Rechtes Foto */}
             <Polaroid
-              photoId={photos[secondIndex].id}
+              url={photos[secondIndex].url}
               alt={photos[secondIndex].originalName}
               rotation={3}
               style={{
@@ -320,13 +322,13 @@ export default function Slideshow() {
           return (
             <div style={{ width: "90%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Polaroid
-                photoId={photos[secondIndex].id}
+                url={photos[secondIndex].url}
                 alt={photos[secondIndex].originalName}
                 rotation={4}
                 style={{ position: "absolute", width: "52%", height: "60%", right: "3%", bottom: "5%", zIndex: 1 }}
               />
               <Polaroid
-                photoId={photos[currentIndex].id}
+                url={photos[currentIndex].url}
                 alt={photos[currentIndex].originalName}
                 rotation={-3}
                 style={{ position: "absolute", width: "52%", height: "60%", left: "8%", top: "5%", zIndex: 2 }}
@@ -338,7 +340,7 @@ export default function Slideshow() {
           <div style={{ width: "95%", height: "92%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Linkes Foto – hinten links */}
             <Polaroid
-              photoId={photos[currentIndex].id}
+              url={photos[currentIndex].url}
               alt={photos[currentIndex].originalName}
               rotation={-6}
               style={{
@@ -352,7 +354,7 @@ export default function Slideshow() {
             />
             {/* Mittleres Foto – vorne mittig */}
             <Polaroid
-              photoId={photos[secondIndex].id}
+              url={photos[secondIndex].url}
               alt={photos[secondIndex].originalName}
               rotation={1}
               style={{
@@ -366,7 +368,7 @@ export default function Slideshow() {
             />
             {/* Rechtes Foto – hinten rechts */}
             <Polaroid
-              photoId={photos[thirdIndex].id}
+              url={photos[thirdIndex].url}
               alt={photos[thirdIndex].originalName}
               rotation={5}
               style={{
@@ -386,13 +388,13 @@ export default function Slideshow() {
           return (
             <div style={{ width: "92%", height: "90%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Polaroid
-                photoId={photos[currentIndex].id}
+                url={photos[currentIndex].url}
                 alt={photos[currentIndex].originalName}
                 rotation={-2}
                 style={{ position: "absolute", width: "48%", height: "60%", left: "2%", bottom: "5%", zIndex: 2 }}
               />
               <Polaroid
-                photoId={photos[secondIndex].id}
+                url={photos[secondIndex].url}
                 alt={photos[secondIndex].originalName}
                 rotation={3}
                 style={{ position: "absolute", width: "48%", height: "60%", right: "2%", top: "5%", zIndex: 1 }}
@@ -404,7 +406,7 @@ export default function Slideshow() {
           <div style={{ width: "95%", height: "92%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Hinteres Foto – ganz hinten, leicht gedreht */}
             <Polaroid
-              photoId={photos[thirdIndex].id}
+              url={photos[thirdIndex].url}
               alt={photos[thirdIndex].originalName}
               rotation={7}
               style={{
@@ -418,7 +420,7 @@ export default function Slideshow() {
             />
             {/* Mittleres Foto */}
             <Polaroid
-              photoId={photos[secondIndex].id}
+              url={photos[secondIndex].url}
               alt={photos[secondIndex].originalName}
               rotation={-4}
               style={{
@@ -432,7 +434,7 @@ export default function Slideshow() {
             />
             {/* Vorderes Foto – mittig, dominant */}
             <Polaroid
-              photoId={photos[currentIndex].id}
+              url={photos[currentIndex].url}
               alt={photos[currentIndex].originalName}
               rotation={1.5}
               style={{

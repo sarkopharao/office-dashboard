@@ -26,11 +26,12 @@ export interface SalesData {
 }
 
 export interface Photo {
-  id: number;
+  id: string;          // UUID aus Supabase
   filename: string;
   originalName: string;
   uploadedAt: string;
   sortOrder: number;
+  url: string;         // Signed URL von Supabase Storage
 }
 
 export interface SalesCardData {
