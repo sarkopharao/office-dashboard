@@ -5,39 +5,22 @@ import DashboardBackground from "@/components/DashboardBackground";
 
 export default function DashboardPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>
+    <div className="dashboard-layout">
       {/* Header */}
       <Header />
 
       {/* Main Content */}
-      <div style={{ display: "flex", flex: 1, minHeight: 0, position: "relative" }}>
+      <div className="dashboard-content">
         {/* Wechselnder Hintergrund über gesamte Breite */}
         <DashboardBackground />
 
-        {/* Left Side: Sales Data (volle Höhe, kein Scroll) */}
-        <div
-          style={{
-            width: "50%",
-            position: "relative",
-            zIndex: 10,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
+        {/* Left Side: Sales Data */}
+        <div className="sales-column">
           <SalesGrid />
         </div>
 
         {/* Right Side: Team Slideshow */}
-        <div
-          style={{
-            flex: 1,
-            position: "relative",
-            zIndex: 10,
-            display: "flex",
-            minHeight: 0,
-          }}
-        >
+        <div className="slideshow-column">
           <Slideshow />
         </div>
       </div>

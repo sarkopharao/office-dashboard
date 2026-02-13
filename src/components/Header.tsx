@@ -72,6 +72,7 @@ export default function Header() {
       {/* Links: Logo */}
       <Flex vertical="center" style={{ flex: 1 }}>
         <Image
+          className="header-logo"
           src="/intumind-design/intumind-logo-laenglich-white.png"
           alt="intumind"
           width={160}
@@ -81,10 +82,12 @@ export default function Header() {
       </Flex>
 
       {/* Mitte: Uhr + Datum */}
-      <Clock />
+      <div className="header-clock">
+        <Clock />
+      </div>
 
       {/* Rechts: Buttons */}
-      <Flex vertical="center" gap="8" style={{ flex: 1, justifyContent: "flex-end" }}>
+      <Flex vertical="center" gap="8" className="header-buttons" style={{ flex: 1, justifyContent: "flex-end" }}>
         {user?.loggedIn && (
           <>
             <a

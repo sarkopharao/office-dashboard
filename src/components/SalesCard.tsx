@@ -25,6 +25,7 @@ export default function SalesCard({
       vertical="center"
       padding="m"
       radius="l"
+      className="sales-card"
       style={{
         minHeight: "100px",
         textAlign: "center",
@@ -43,7 +44,7 @@ export default function SalesCard({
     >
       <Text
         variant="display-strong-m"
-        className="number-transition"
+        className="number-transition sales-card-value"
         style={{
           color: isHighlight ? "#ffffff" : "#27313F",
           fontSize: "1.75rem",
@@ -79,6 +80,7 @@ export default function SalesCard({
           />
           <Text
             variant="heading-strong-s"
+            className="sales-card-subvalue"
             style={{
               color: isHighlight ? "#ffffff" : "#27313F",
               fontSize: "1.15rem",

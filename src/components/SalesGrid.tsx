@@ -249,7 +249,7 @@ export default function SalesGrid() {
         >
           Bestellungen Heute nach Produkt
         </Text>
-        <Grid columns="3" gap="s">
+        <Grid columns="3" gap="s" className="product-grid">
           {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
             <Flex key={key} vertical="center" gap="12">
               <div

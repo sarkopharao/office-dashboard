@@ -180,6 +180,7 @@ export default function Slideshow() {
           horizontal="center"
           vertical="center"
           fillWidth
+          className="quote-card"
           style={{
             backgroundImage: "url('/quote-bg.jpg')",
             backgroundSize: "cover",
@@ -457,7 +458,7 @@ export default function Slideshow() {
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", padding: "16px", boxSizing: "border-box", gap: "16px" }}>
       {/* Foto-Bereich */}
-      <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 0 }}>
+      <div className="slideshow-photos" style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 0 }}>
         <div
           className="slideshow-image"
           style={{
@@ -497,6 +498,7 @@ export default function Slideshow() {
         horizontal="center"
         vertical="center"
         fillWidth
+        className="quote-card"
         style={{
           backgroundImage: "url('/quote-bg.jpg')",
           backgroundSize: "cover",
@@ -521,6 +523,7 @@ export default function Slideshow() {
         >
           <Text
             variant="heading-strong-s"
+            className="quote-text"
             style={{
               color: "#27313F",
               fontFamily: "var(--font-heading)",
