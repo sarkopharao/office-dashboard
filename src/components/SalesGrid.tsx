@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Column, Flex, Grid, Text } from "@once-ui-system/core";
 import SalesCard from "./SalesCard";
+import RevenueChart from "./RevenueChart";
+import SalesCelebration from "./SalesCelebration";
 import { DUMMY_SALES, SALES_REFRESH_INTERVAL } from "@/lib/constants";
 import type { SalesData } from "@/types";
 
@@ -21,6 +23,10 @@ const PRODUCT_GROUP_CONFIG: {
 
 export default function SalesGrid() {
   const [sales, setSales] = useState<SalesData>(DUMMY_SALES);
+  // TODO: Test-Modus – nach dem Anschauen wieder auf 0 setzen!
+  const [newOrderCount, setNewOrderCount] = useState(3);
+  const prevOrdersRef = useRef<number | null>(null);
+  const isFirstLoadRef = useRef(true);
 
   const syncAndFetch = useCallback(async () => {
     try {
@@ -32,7 +38,22 @@ export default function SalesGrid() {
     try {
       const res = await fetch("/api/digistore");
       if (res.ok) {
-        const data = await res.json();
+        const data: SalesData = await res.json();
+
+        // Neue Bestellungen erkennen (nicht beim ersten Laden)
+        if (isFirstLoadRef.current) {
+          // Beim ersten Laden merken wir uns den Stand, feiern aber nicht
+          prevOrdersRef.current = data.ordersToday;
+          isFirstLoadRef.current = false;
+        } else if (prevOrdersRef.current !== null) {
+          const diff = data.ordersToday - prevOrdersRef.current;
+          if (diff > 0) {
+            // Neue Bestellungen! Raketen los!
+            setNewOrderCount(diff);
+          }
+          prevOrdersRef.current = data.ordersToday;
+        }
+
         setSales(data);
       }
     } catch {
@@ -60,6 +81,12 @@ export default function SalesGrid() {
 
   return (
     <Column gap="m" padding="l">
+      {/* Raketen + Konfetti bei neuen Bestellungen */}
+      <SalesCelebration
+        newOrderCount={newOrderCount}
+        onAnimationComplete={() => setNewOrderCount(0)}
+      />
+
       {/* Obere Reihe: Kunden + Tagesumsatz */}
       <Grid columns="2" gap="m">
         <SalesCard
@@ -147,6 +174,9 @@ export default function SalesGrid() {
           ))}
         </Grid>
       </Column>
+
+      {/* Umsatzverlauf-Chart */}
+      <RevenueChart dailyRevenue={sales.dailyRevenue || []} />
     </Column>
   );
 }

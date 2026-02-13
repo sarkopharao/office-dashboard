@@ -62,3 +62,22 @@ html, body {
 .quote-fade {
   transition: opacity 0.8s ease-in-out;
 }
+
+/* Dezente Scrollbar für die Dashboard-Spalte */
+.dashboard-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 147, 153, 0.25) transparent;
+}
+.dashboard-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.dashboard-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dashboard-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 147, 153, 0.25);
+  border-radius: 4px;
+}
+.dashboard-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 147, 153, 0.4);
+}

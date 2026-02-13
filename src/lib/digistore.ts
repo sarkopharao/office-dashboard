@@ -1,4 +1,4 @@
-import type { SalesData, ProductGroupOrders } from "@/types";
+import type { SalesData, ProductGroupOrders, DailyRevenue } from "@/types";
 
 const BASE_URL = "https://www.digistore24.com/api/call";
 
@@ -34,10 +34,10 @@ async function apiCall(endpoint: string, method: "GET" | "POST" = "GET"): Promis
 }
 
 /**
- * API-Call mit zusätzlichen Query-Parametern (z.B. page=2).
+ * API-Call mit zusätzlichen Query-Parametern (z.B. page=2, date_from=...).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function apiCallWithParams(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+async function apiCallWithParams(endpoint: string, params: Record<string, string> = {}, method: "GET" | "POST" = "GET"): Promise<any> {
   const apiKey = process.env.DIGISTORE_API_KEY;
 
   if (!apiKey || apiKey === "dein-api-key-hier") {
@@ -51,6 +51,7 @@ async function apiCallWithParams(endpoint: string, params: Record<string, string
   }
 
   const res = await fetch(url.toString(), {
+    method,
     headers: {
       "Content-Type": "application/json",
       "X-DS-API-KEY": apiKey,
@@ -168,6 +169,12 @@ export async function fetchAllSalesData(): Promise<SalesData> {
   let ordersYesterday = 0;
   let totalCustomers = 0;
   const ordersByGroup = emptyOrdersByGroup();
+  let dailyRevenue: DailyRevenue[] = [];
+
+  // Datumsgrenzen für die letzten 14 Tage (Chart-Daten)
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+  const fourteenDaysAgoStr = fourteenDaysAgo.toISOString().split("T")[0];
 
   // Monatspräfixe berechnen (z.B. "2026-02" und "2026-01")
   const now = new Date();
@@ -211,7 +218,9 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     } catch { /* ignore */ }
   }
 
-  // === statsDailyAmounts ===
+  // === statsDailyAmounts (aktueller Monat) ===
+  const revenueMap = new Map<string, number>();
+
   if (dailyAmounts.status === "fulfilled") {
     try {
       const amountList = dailyAmounts.value?.amount_list;
@@ -233,13 +242,20 @@ export async function fetchAllSalesData(): Promise<SalesData> {
           if (monthPrefix === thisMonthPrefix) {
             revenueThisMonth += amount;
           }
-          if (monthPrefix === lastMonthPrefix) {
-            revenueLastMonth += amount;
+
+          // Chart-Daten: Letzte 14 Tage sammeln
+          if (day >= fourteenDaysAgoStr && day <= today) {
+            revenueMap.set(day, (revenueMap.get(day) || 0) + amount);
           }
         }
       }
     } catch { /* ignore */ }
   }
+
+  // dailyRevenue aus API-Daten aufbauen (wird in sync-Route mit History gemergt)
+  dailyRevenue = Array.from(revenueMap.entries())
+    .map(([day, amount]) => ({ day, amount }))
+    .sort((a, b) => a.day.localeCompare(b.day));
 
   // === listBuyers ===
   if (buyers.status === "fulfilled") {
@@ -276,6 +292,7 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     revenueThisMonth,
     revenueLastMonth,
     totalCustomers,
+    dailyRevenue,
     fetchedAt: new Date().toISOString(),
   };
 }

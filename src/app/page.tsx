@@ -15,23 +15,19 @@ export default function DashboardPage() {
         {/* Wechselnder Hintergrund über gesamte Breite */}
         <DashboardBackground />
 
-        {/* Left Side: Sales Data + Quote */}
+        {/* Left Side: Sales Data + Quote (scrollbar) */}
         <div
+          className="dashboard-scroll"
           style={{
             width: "42%",
-            display: "flex",
-            flexDirection: "column",
             position: "relative",
             zIndex: 10,
-            overflow: "hidden",
+            overflowY: "auto",
+            overflowX: "hidden",
           }}
         >
-          <div style={{ flex: "0 0 auto" }}>
-            <SalesGrid />
-          </div>
-          <div style={{ marginTop: "auto", flexShrink: 0 }}>
-            <MotivationalQuote />
-          </div>
+          <SalesGrid />
+          <MotivationalQuote />
         </div>
 
         {/* Right Side: Team Slideshow */}

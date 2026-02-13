@@ -7,6 +7,11 @@ export interface ProductGroupOrders {
   "Event 2026": number;
 }
 
+export interface DailyRevenue {
+  day: string;    // "YYYY-MM-DD"
+  amount: number; // Netto-Umsatz in EUR
+}
+
 export interface SalesData {
   revenueToday: number;
   revenueYesterday: number;
@@ -16,6 +21,7 @@ export interface SalesData {
   revenueThisMonth: number;
   revenueLastMonth: number;
   totalCustomers: number;
+  dailyRevenue: DailyRevenue[]; // Letzte 14 Tage, chronologisch sortiert
   fetchedAt: string;
 }
 

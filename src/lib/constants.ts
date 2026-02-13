@@ -20,6 +20,24 @@ export const MOTIVATIONAL_QUOTES = [
   { text: "Health is not valued till sickness comes.", author: "Thomas Fuller" },
 ];
 
+// Dummy dailyRevenue: 14 Tage rückwärts ab heute
+function generateDummyDailyRevenue(): import("@/types").DailyRevenue[] {
+  const days: import("@/types").DailyRevenue[] = [];
+  const amounts = [
+    1850, 2400, 3100, 2750, 4200, 3800, 1200,  // Vorwoche (Mo-So)
+    2100, 2900, 3500, 2847, 4600, 4041, 1500,   // Aktuelle Woche (Mo-So)
+  ];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({
+      day: d.toISOString().split("T")[0],
+      amount: amounts[13 - i],
+    });
+  }
+  return days;
+}
+
 export const DUMMY_SALES: import("@/types").SalesData = {
   revenueToday: 2847.5,
   revenueYesterday: 3192.0,
@@ -36,5 +54,6 @@ export const DUMMY_SALES: import("@/types").SalesData = {
   revenueThisMonth: 48500,
   revenueLastMonth: 62300,
   totalCustomers: 8432,
+  dailyRevenue: generateDummyDailyRevenue(),
   fetchedAt: new Date().toISOString(),
 };
