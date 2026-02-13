@@ -40,6 +40,33 @@ async function saveHistory(history: Record<string, number>): Promise<void> {
   await writeFile(HISTORY_FILE, JSON.stringify(trimmed, null, 2));
 }
 
+/**
+ * Berechnet Revenue-Werte aus der History als Fallback,
+ * wenn die Digistore24-API down ist und keine aktuellen Daten liefert.
+ */
+function deriveRevenueFromHistory(history: Record<string, number>) {
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const now = new Date();
+  const thisMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthPrefix = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
+
+  let revenueToday = 0;
+  let revenueYesterday = 0;
+  let revenueThisMonth = 0;
+  let revenueLastMonth = 0;
+
+  for (const [day, amount] of Object.entries(history)) {
+    if (day === today) revenueToday = amount;
+    if (day === yesterday) revenueYesterday = amount;
+    if (day.startsWith(thisMonthPrefix)) revenueThisMonth += amount;
+    if (day.startsWith(lastMonthPrefix)) revenueLastMonth += amount;
+  }
+
+  return { revenueToday, revenueYesterday, revenueThisMonth, revenueLastMonth };
+}
+
 export async function POST() {
   try {
     const salesData = await fetchAllSalesData();
@@ -69,13 +96,53 @@ export async function POST() {
       .map(([day, amount]) => ({ day, amount }))
       .sort((a, b) => a.day.localeCompare(b.day));
 
-    // Sales-Cache speichern (mit angereicherten dailyRevenue aus History)
-    await writeFile(CACHE_FILE, JSON.stringify(salesData, null, 2));
+    // === FALLBACK: Revenue aus History berechnen wenn API-Daten fehlen ===
+    // Wenn die Digistore24 API down ist, kommen alle Revenue-Werte als 0 zurück.
+    // In dem Fall nutzen wir die gespeicherten Tagesumsätze aus der History.
+    const historyFallback = deriveRevenueFromHistory(history);
+
+    if (salesData.revenueToday === 0 && historyFallback.revenueToday > 0) {
+      salesData.revenueToday = historyFallback.revenueToday;
+    }
+    if (salesData.revenueYesterday === 0 && historyFallback.revenueYesterday > 0) {
+      salesData.revenueYesterday = historyFallback.revenueYesterday;
+    }
+    if (salesData.revenueThisMonth === 0 && historyFallback.revenueThisMonth > 0) {
+      salesData.revenueThisMonth = historyFallback.revenueThisMonth;
+    }
+    if (salesData.revenueLastMonth === 0 && historyFallback.revenueLastMonth > 0) {
+      salesData.revenueLastMonth = historyFallback.revenueLastMonth;
+    }
+
+    // === SCHUTZ: Alten Cache nicht mit reinen Nullwerten überschreiben ===
+    // Wenn sowohl API als auch History keine Revenue-Daten haben, aber der alte Cache
+    // welche hat, behalten wir den alten Cache und aktualisieren nur dailyRevenue.
+    let usedOldCache = false;
+    if (salesData.revenueToday === 0 && salesData.revenueThisMonth === 0) {
+      try {
+        const oldRaw = await readFile(CACHE_FILE, "utf-8");
+        const oldCache = JSON.parse(oldRaw);
+        if (oldCache.revenueToday > 0 || oldCache.revenueThisMonth > 0) {
+          // Alten Cache behalten, nur dailyRevenue und fetchedAt aktualisieren
+          oldCache.dailyRevenue = salesData.dailyRevenue;
+          oldCache.fetchedAt = salesData.fetchedAt;
+          await writeFile(CACHE_FILE, JSON.stringify(oldCache, null, 2));
+          usedOldCache = true;
+        }
+      } catch { /* Kein alter Cache vorhanden, normal weitermachen */ }
+    }
+
+    if (!usedOldCache) {
+      // Sales-Cache speichern (mit angereicherten dailyRevenue aus History)
+      await writeFile(CACHE_FILE, JSON.stringify(salesData, null, 2));
+    }
 
     return NextResponse.json({
       success: true,
       data: salesData,
-      message: "Daten erfolgreich synchronisiert",
+      message: usedOldCache
+        ? "API teilweise nicht erreichbar – Cache mit History-Fallback aktualisiert"
+        : "Daten erfolgreich synchronisiert",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unbekannter Fehler";

@@ -33,7 +33,7 @@ export default function RootLayout({
         fonts.code.variable,
       )}
     >
-      <head>
+      <head suppressHydrationWarning>
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
@@ -67,7 +67,7 @@ export default function RootLayout({
         />
       </head>
       <Providers>
-        <Column as="body" background="page" fillWidth margin="0" padding="0">
+        <Column as="body" background="page" fillWidth margin="0" padding="0" suppressHydrationWarning>
           {children}
         </Column>
       </Providers>

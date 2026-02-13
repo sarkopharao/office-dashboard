@@ -220,6 +220,8 @@ export async function fetchAllSalesData(): Promise<SalesData> {
 
   // === statsDailyAmounts (aktueller Monat) ===
   const revenueMap = new Map<string, number>();
+  // Merken ob statsSalesSummary den Monatsumsatz schon geliefert hat
+  const hasMonthFromSummary = revenueThisMonth > 0;
 
   if (dailyAmounts.status === "fulfilled") {
     try {
@@ -229,18 +231,20 @@ export async function fetchAllSalesData(): Promise<SalesData> {
           const day = String(entry.day || "");
           const amount = parseFloat(entry.vendor_netto_amount) || 0;
 
-          // Tagesumsätze
-          if (day === today) {
-            revenueToday = revenueToday || amount;
+          // Tagesumsätze (nur setzen wenn noch 0 – statsSalesSummary hat Vorrang)
+          if (day === today && revenueToday === 0) {
+            revenueToday = amount;
           }
           if (day === yesterday) {
             revenueYesterday = amount;
           }
 
-          // Monatssummen
-          const monthPrefix = day.substring(0, 7);
-          if (monthPrefix === thisMonthPrefix) {
-            revenueThisMonth += amount;
+          // Monatssummen – NUR wenn statsSalesSummary keinen Wert hatte (Double-Counting vermeiden!)
+          if (!hasMonthFromSummary) {
+            const monthPrefix = day.substring(0, 7);
+            if (monthPrefix === thisMonthPrefix) {
+              revenueThisMonth += amount;
+            }
           }
 
           // Chart-Daten: Letzte 14 Tage sammeln
