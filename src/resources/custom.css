@@ -265,12 +265,15 @@ html, body {
   }
 
   .quote-card {
-    min-height: 70px !important;
-    padding: 12px !important;
+    min-height: auto !important;
+    padding: 16px 20px !important;
+    overflow: visible !important;
+    margin-bottom: 16px;
   }
 
   .quote-text {
     font-size: 0.95rem !important;
+    line-height: 1.5 !important;
   }
 
   /* Fotos-Seite */
