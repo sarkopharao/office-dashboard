@@ -307,3 +307,30 @@ export async function fetchAllSalesData(): Promise<SalesData> {
     fetchedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * Lädt Purchases für einen bestimmten Zeitraum und zählt Bestellungen pro Produktgruppe.
+ * Wird vom Sales Range Widget verwendet wenn "Details" aktiviert wird.
+ * Nutzt die bestehende matchProductGroup-Logik und paginierte listPurchases API.
+ */
+export async function fetchPurchasesForRange(
+  dateFrom: string,
+  dateTo: string,
+): Promise<{ totalOrders: number; ordersByGroup: ProductGroupOrders }> {
+  const ordersByGroup = emptyOrdersByGroup();
+  let totalOrders = 0;
+
+  const allPurchases = await fetchAllPurchases();
+
+  for (const p of allPurchases) {
+    const createdDate = String(p.created_at || "").substring(0, 10);
+    if (createdDate >= dateFrom && createdDate <= dateTo) {
+      totalOrders++;
+      const productName = String(p.main_product_name || "");
+      const group = matchProductGroup(productName);
+      if (group) ordersByGroup[group]++;
+    }
+  }
+
+  return { totalOrders, ordersByGroup };
+}

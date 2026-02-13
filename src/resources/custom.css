@@ -295,6 +295,17 @@ html, body {
     line-height: 1.5 !important;
   }
 
+  /* Sales Range Widget – Mobile */
+  .sales-range-widget .range-preset-btn {
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.65rem !important;
+  }
+
+  .sales-range-widget .range-date-input {
+    max-width: 120px !important;
+    font-size: 0.7rem !important;
+  }
+
   /* Fotos-Seite */
   .fotos-upload {
     padding: 1.5rem !important;
@@ -303,4 +314,10 @@ html, body {
   .fotos-upload-icon {
     font-size: 2rem !important;
   }
+}
+
+/* ===== Sales Range Widget: Date Input Focus ===== */
+.sales-range-widget .range-date-input:focus {
+  border-color: #009399;
+  box-shadow: 0 0 0 2px rgba(0, 147, 153, 0.15);
 }

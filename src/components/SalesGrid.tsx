@@ -3,6 +3,7 @@
 import { Column, Flex, Grid, Text } from "@once-ui-system/core";
 import SalesCard from "./SalesCard";
 import RevenueChart from "./RevenueChart";
+import SalesRangeWidget from "./SalesRangeWidget";
 import SalesCelebration from "./SalesCelebration";
 import { PRODUCT_GROUP_CONFIG } from "@/lib/constants";
 import { useSalesData } from "@/hooks/useSalesData";
@@ -187,6 +188,9 @@ export default function SalesGrid() {
           ))}
         </Grid>
       </Column>
+
+      {/* Zeitraum-Uebersicht Widget (konfigurierbarer Zeitraum) */}
+      <SalesRangeWidget />
 
       {/* Umsatzverlauf-Chart – füllt restlichen Platz */}
       <RevenueChart dailyRevenue={sales.dailyRevenue || []} />

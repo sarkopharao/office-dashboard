@@ -41,3 +41,21 @@ export interface SalesCardData {
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
 }
+
+// Sales Range Widget: Konfigurierbarer Zeitraum
+export type SalesRangePreset = "7d" | "30d" | "90d" | "year" | "custom";
+
+export interface SalesRangeSelection {
+  preset: SalesRangePreset;
+  dateFrom: string; // "YYYY-MM-DD"
+  dateTo: string;   // "YYYY-MM-DD"
+}
+
+export interface SalesRangeData {
+  totalRevenue: number;
+  totalOrders: number;
+  dateFrom: string;
+  dateTo: string;
+  ordersByGroup?: ProductGroupOrders;
+  fetchedAt: string;
+}
