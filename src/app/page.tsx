@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import SalesGrid from "@/components/SalesGrid";
 import Slideshow from "@/components/Slideshow";
 import DashboardBackground from "@/components/DashboardBackground";
+import MobileFooter from "@/components/MobileFooter";
 
 export default function DashboardPage() {
   return (
@@ -24,6 +25,9 @@ export default function DashboardPage() {
           <Slideshow />
         </div>
       </div>
+
+      {/* Footer mit Buttons – nur auf Mobile sichtbar */}
+      <MobileFooter />
     </div>
   );
 }

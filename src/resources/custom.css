@@ -211,10 +211,12 @@ html, body {
     font-size: 0.55rem !important;
   }
 
-  .header-buttons a,
-  .header-buttons button {
-    padding: 0.3rem 0.6rem !important;
-    font-size: 0.65rem !important;
+  .header-buttons {
+    display: none !important;
+  }
+
+  .mobile-footer {
+    display: flex !important;
   }
 
   /* SalesGrid – mehr Luft */
