@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchTransactionsForRange } from "@/lib/digistore";
 import type { SalesRangeData } from "@/types";
 
+// listTransactions kann bei großen Zeiträumen bis zu 30s dauern
+export const maxDuration = 60;
+
 /**
  * GET /api/digistore/range?dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD&breakdown=true
  *

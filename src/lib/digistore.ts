@@ -1,12 +1,14 @@
 import type { SalesData, ProductGroupOrders, DailyRevenue } from "@/types";
 
 const BASE_URL = "https://www.digistore24.com/api/call";
-const API_TIMEOUT = 10000; // 10 Sekunden Timeout für API-Calls
+const API_TIMEOUT = 10000; // 10 Sekunden Standard-Timeout
+const API_TIMEOUT_LONG = 35000; // 35 Sekunden für langsame Endpoints (listTransactions)
 
 async function apiCall(
   endpoint: string,
   params: Record<string, string> = {},
   method: "GET" | "POST" = "GET",
+  timeoutMs?: number,
 ): Promise<unknown> {
   const apiKey = process.env.DIGISTORE_API_KEY;
 
@@ -20,8 +22,9 @@ async function apiCall(
     url.searchParams.set(key, value);
   }
 
+  const effectiveTimeout = timeoutMs ?? API_TIMEOUT;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT);
+  const timeout = setTimeout(() => controller.abort(), effectiveTimeout);
 
   try {
     const res = await fetch(url.toString(), {
@@ -46,7 +49,7 @@ async function apiCall(
     return data.data;
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Digistore24 API Timeout: ${endpoint} nach ${API_TIMEOUT / 1000}s`);
+      throw new Error(`Digistore24 API Timeout: ${endpoint} nach ${effectiveTimeout / 1000}s`);
     }
     throw err;
   } finally {
@@ -346,11 +349,12 @@ export async function fetchTransactionsForRange(
   ordersByGroup?: ProductGroupOrders;
 }> {
   // Erste Seite laden — Summary enthält immer den Gesamtumsatz
+  // listTransactions kann bei großen Zeiträumen bis zu 25s dauern
   const firstPage = await apiCall("listTransactions", {
     from: dateFrom,
     to: dateTo,
     page: "1",
-  }) as TransactionPage;
+  }, "GET", API_TIMEOUT_LONG) as TransactionPage;
 
   const eur = firstPage?.summary?.amounts?.EUR;
   const totalRevenue = eur?.earned_amount || 0;
@@ -404,7 +408,7 @@ export async function fetchTransactionsForRange(
         from: dateFrom,
         to: dateTo,
         page: String(page),
-      }) as TransactionPage;
+      }, "GET", API_TIMEOUT_LONG) as TransactionPage;
       processTxList(pageData?.transaction_list || []);
     } catch {
       // Bei Fehler auf einer Seite weitermachen
