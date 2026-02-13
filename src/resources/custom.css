@@ -203,6 +203,11 @@ html, body {
     height: auto !important;
   }
 
+  .header-clock {
+    flex: 1 !important;
+    text-align: right !important;
+  }
+
   .header-clock .clock-time {
     font-size: 0.85rem !important;
   }
