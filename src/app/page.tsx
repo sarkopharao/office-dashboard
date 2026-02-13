@@ -16,7 +16,7 @@ export default function DashboardPage() {
         <DashboardBackground />
 
         {/* Left Side: Sales Data */}
-        <div className="sales-column">
+        <div className="sales-column dashboard-scroll">
           <SalesGrid />
         </div>
 
