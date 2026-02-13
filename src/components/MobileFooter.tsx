@@ -1,24 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function MobileFooter() {
-  const [loggedIn, setLoggedIn] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) { setLoggedIn(true); return; }
-      } catch { /* ignore */ }
-      if (document.cookie.includes("admin_token=")) { setLoggedIn(true); return; }
-      setLoggedIn(false);
-    };
-    check();
-  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -29,8 +15,6 @@ export default function MobileFooter() {
     await fetch("/api/auth", { method: "DELETE" });
     window.location.href = "/login";
   };
-
-  if (!loggedIn) return null;
 
   return (
     <div

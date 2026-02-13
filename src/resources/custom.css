@@ -210,6 +210,9 @@ html, body {
 
   .header-clock {
     flex: 1 !important;
+  }
+
+  .header-clock .clock-wrapper {
     text-align: right !important;
   }
 
