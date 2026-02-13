@@ -90,7 +90,7 @@ export default function SalesGrid() {
   };
 
   return (
-    <Column gap="s" padding="m" style={{ flex: 1, minHeight: 0 }}>
+    <Column gap="s" padding="m" style={{ minHeight: "min-content" }}>
       {/* Raketen + Konfetti bei neuen Bestellungen */}
       <SalesCelebration
         newOrderCount={newOrderCount}

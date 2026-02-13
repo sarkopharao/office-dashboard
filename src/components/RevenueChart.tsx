@@ -145,8 +145,7 @@ export default memo(function RevenueChart({ dailyRevenue }: RevenueChartProps) {
       padding="m"
       className="revenue-chart"
       style={{
-        flex: 1,
-        minHeight: 0,
+        minHeight: "250px",
         background: "rgba(255, 255, 255, 0.75)",
         backdropFilter: "blur(4px)",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
@@ -186,7 +185,7 @@ export default memo(function RevenueChart({ dailyRevenue }: RevenueChartProps) {
       </Flex>
 
       {/* Chart – füllt restlichen Platz */}
-      <div className="revenue-chart-inner" style={{ width: "100%", flex: 1, minHeight: 0 }}>
+      <div className="revenue-chart-inner" style={{ width: "100%", flex: 1, minHeight: "200px" }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
