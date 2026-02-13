@@ -309,28 +309,108 @@ export async function fetchAllSalesData(): Promise<SalesData> {
 }
 
 /**
- * Lädt Purchases für einen bestimmten Zeitraum und zählt Bestellungen pro Produktgruppe.
- * Wird vom Sales Range Widget verwendet wenn "Details" aktiviert wird.
- * Nutzt die bestehende matchProductGroup-Logik und paginierte listPurchases API.
+ * Lädt Transaktionsdaten für einen beliebigen Zeitraum via listTransactions API.
+ * Nutzt `from`/`to` Parameter der API für serverseitige Filterung.
+ *
+ * Ohne Breakdown: Nur Summary (1 API-Call, kein Paging).
+ * Mit Breakdown: Alle Seiten laden für Produktgruppen-Zuordnung.
  */
-export async function fetchPurchasesForRange(
+interface TransactionEntry {
+  main_product_name?: string;
+  transaction_type?: string;
+}
+
+interface TransactionPage {
+  from?: string;
+  to?: string;
+  page_count?: string | number;
+  page_size?: string | number;
+  summary?: {
+    amounts?: {
+      EUR?: {
+        count?: number;
+        earned_amount?: number;
+      };
+    };
+  };
+  transaction_list?: TransactionEntry[];
+}
+
+export async function fetchTransactionsForRange(
   dateFrom: string,
   dateTo: string,
-): Promise<{ totalOrders: number; ordersByGroup: ProductGroupOrders }> {
+  includeBreakdown = false,
+): Promise<{
+  totalRevenue: number;
+  totalOrders: number;
+  ordersByGroup?: ProductGroupOrders;
+}> {
+  // Erste Seite laden — Summary enthält immer den Gesamtumsatz
+  const firstPage = await apiCall("listTransactions", {
+    from: dateFrom,
+    to: dateTo,
+    page: "1",
+  }) as TransactionPage;
+
+  const eur = firstPage?.summary?.amounts?.EUR;
+  const totalRevenue = eur?.earned_amount || 0;
+
+  // Ohne Breakdown: Payments aus Summary als totalOrders nutzen
+  // (Summary count enthält auch Refunds/Chargebacks, deshalb Seite 1 zählen)
+  if (!includeBreakdown) {
+    // Zahlungen auf Seite 1 zählen für genaue Order-Zahl
+    const txList = firstPage?.transaction_list || [];
+    let paymentCount = 0;
+    for (const tx of txList) {
+      if (tx.transaction_type === "payment") paymentCount++;
+    }
+
+    // Wenn nur 1 Seite: exakte Zahl. Sonst: Summary-Count als Näherung
+    const pageCount = parseInt(String(firstPage?.page_count ?? "1"), 10) || 1;
+    const totalOrders = pageCount === 1
+      ? paymentCount
+      : (eur?.count || 0); // Summary-Count als Approximation
+
+    return { totalRevenue, totalOrders };
+  }
+
+  // Mit Breakdown: Alle Seiten laden für Produktgruppen-Zuordnung
   const ordersByGroup = emptyOrdersByGroup();
   let totalOrders = 0;
+  const MAX_PAGES = 20;
 
-  const allPurchases = await fetchAllPurchases();
+  const pageCount = Math.min(
+    parseInt(String(firstPage?.page_count ?? "1"), 10) || 1,
+    MAX_PAGES,
+  );
 
-  for (const p of allPurchases) {
-    const createdDate = String(p.created_at || "").substring(0, 10);
-    if (createdDate >= dateFrom && createdDate <= dateTo) {
+  // Seite 1 verarbeiten
+  const processTxList = (list: TransactionEntry[]) => {
+    for (const tx of list) {
+      if (tx.transaction_type !== "payment") continue;
       totalOrders++;
-      const productName = String(p.main_product_name || "");
+      const productName = String(tx.main_product_name || "");
       const group = matchProductGroup(productName);
       if (group) ordersByGroup[group]++;
     }
+  };
+
+  processTxList(firstPage?.transaction_list || []);
+
+  // Weitere Seiten laden
+  for (let page = 2; page <= pageCount; page++) {
+    try {
+      const pageData = await apiCall("listTransactions", {
+        from: dateFrom,
+        to: dateTo,
+        page: String(page),
+      }) as TransactionPage;
+      processTxList(pageData?.transaction_list || []);
+    } catch {
+      // Bei Fehler auf einer Seite weitermachen
+      break;
+    }
   }
 
-  return { totalOrders, ordersByGroup };
+  return { totalRevenue, totalOrders, ordersByGroup };
 }

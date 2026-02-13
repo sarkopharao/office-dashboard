@@ -23,11 +23,11 @@ async function loadHistory(): Promise<Record<string, number>> {
 
 /**
  * Speichert/aktualisiert Tagesumsätze in revenue_history.
- * Behält maximal 60 Tage (alte Einträge werden gelöscht).
+ * Behält maximal 365 Tage (alte Einträge werden gelöscht).
  */
 async function saveHistory(history: Record<string, number>): Promise<void> {
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 60);
+  cutoff.setDate(cutoff.getDate() - 365);
   const cutoffStr = cutoff.toISOString().split("T")[0];
 
   // Alte Einträge löschen
@@ -36,7 +36,7 @@ async function saveHistory(history: Record<string, number>): Promise<void> {
     .delete()
     .lt("day", cutoffStr);
 
-  // Aktuelle Einträge upserten (nur die innerhalb der 60 Tage)
+  // Aktuelle Einträge upserten (nur die innerhalb der 365 Tage)
   const rows = Object.entries(history)
     .filter(([day]) => day >= cutoffStr)
     .map(([day, amount]) => ({
