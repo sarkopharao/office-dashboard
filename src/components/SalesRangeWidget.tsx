@@ -14,6 +14,13 @@ const PRESETS: { key: SalesRangePreset; label: string }[] = [
   { key: "custom", label: "Zeitraum..." },
 ];
 
+const CRYSTAL_PHRASES = [
+  "Blicke in die Vergangenheit...",
+  "Lese die Umsatz-Sterne...",
+  "Befrage die Kristallkugel...",
+  "Enthuelle die Zahlen...",
+];
+
 function formatCurrency(amount: number): string {
   return amount.toLocaleString("de-DE", {
     style: "currency",
@@ -55,8 +62,6 @@ export default memo(function SalesRangeWidget() {
         backdropFilter: "blur(4px)",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         position: "relative",
-        opacity: loading ? 0.7 : 1,
-        transition: "opacity 0.3s ease",
       }}
     >
       {/* Header: Titel + Details-Toggle */}
@@ -181,101 +186,176 @@ export default memo(function SalesRangeWidget() {
         </Flex>
       )}
 
-      {/* Umsatz + Bestellungen */}
-      {rangeData && (
-        <Grid columns="2" gap="s">
-          <Column horizontal="center" vertical="center" style={{ textAlign: "center" }}>
-            <Text
-              variant="display-strong-m"
+      {/* Kristallkugel-Ladeanimation */}
+      {loading && !rangeData && (
+        <Flex
+          direction="column"
+          horizontal="center"
+          vertical="center"
+          gap="8"
+          style={{ padding: "1.5rem 0" }}
+        >
+          {/* Glühende Kristallkugel mit Sternen */}
+          <div style={{ position: "relative", width: "60px", height: "60px" }}>
+            <span
               style={{
-                color: "#27313F",
-                fontSize: "1.5rem",
-                fontWeight: 800,
-                lineHeight: 1,
-                fontVariantNumeric: "tabular-nums",
+                fontSize: "2.5rem",
+                display: "block",
+                textAlign: "center",
+                animation: "crystalFloat 2s ease-in-out infinite",
+                filter: "drop-shadow(0 0 12px rgba(0, 147, 153, 0.5))",
               }}
             >
-              {formatCurrency(rangeData.totalRevenue)}
-            </Text>
-            <Text
-              variant="label-strong-s"
-              style={{
-                color: "#B2BDD1",
-                fontSize: "0.65rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                marginTop: "0.2rem",
-              }}
-            >
-              Umsatz
-            </Text>
-          </Column>
-          <Column horizontal="center" vertical="center" style={{ textAlign: "center" }}>
-            <Text
-              variant="display-strong-m"
-              style={{
-                color: "#27313F",
-                fontSize: "1.5rem",
-                fontWeight: 800,
-                lineHeight: 1,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {rangeData.totalOrders.toLocaleString("de-DE")}
-            </Text>
-            <Text
-              variant="label-strong-s"
-              style={{
-                color: "#B2BDD1",
-                fontSize: "0.65rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                marginTop: "0.2rem",
-              }}
-            >
-              Bestellungen
-            </Text>
-          </Column>
-        </Grid>
+              🔮
+            </span>
+            {/* Funkelnde Sterne drumherum */}
+            {["✨", "⭐", "✨"].map((star, i) => (
+              <span
+                key={i}
+                style={{
+                  position: "absolute",
+                  fontSize: "0.8rem",
+                  top: `${[0, 50, 10][i]}%`,
+                  left: `${[-10, 85, 90][i]}%`,
+                  animation: `crystalSparkle 1.5s ease-in-out infinite`,
+                  animationDelay: `${i * 0.5}s`,
+                  opacity: 0,
+                }}
+              >
+                {star}
+              </span>
+            ))}
+          </div>
+          <Text
+            variant="body-strong-m"
+            style={{
+              color: "#009399",
+              textAlign: "center",
+              animation: "crystalTextFade 3s ease-in-out infinite",
+            }}
+          >
+            {CRYSTAL_PHRASES[Math.floor(Date.now() / 3000) % CRYSTAL_PHRASES.length]}
+          </Text>
+          <Text
+            variant="body-default-s"
+            style={{ color: "#B2BDD1", textAlign: "center", fontSize: "0.7rem" }}
+          >
+            Digistore24 wird befragt...
+          </Text>
+          <style>{`
+            @keyframes crystalFloat {
+              0%, 100% { transform: translateY(0) scale(1); }
+              50% { transform: translateY(-6px) scale(1.08); }
+            }
+            @keyframes crystalSparkle {
+              0%, 100% { opacity: 0; transform: scale(0.5); }
+              50% { opacity: 1; transform: scale(1.2); }
+            }
+            @keyframes crystalTextFade {
+              0%, 100% { opacity: 0.6; }
+              50% { opacity: 1; }
+            }
+          `}</style>
+        </Flex>
       )}
 
-      {/* Produktgruppen-Breakdown (optional) */}
-      {showDetails && rangeData?.ordersByGroup && (
-        <Grid columns="3" gap="s" className="product-grid">
-          {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
-            <Flex key={key} vertical="center" gap="8" className="product-row">
-              <div
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "50%",
-                  backgroundColor: color,
-                  flexShrink: 0,
-                }}
-              />
+      {/* Umsatz + Bestellungen (mit dezenter Opacity bei Refresh) */}
+      {rangeData && (
+        <div style={{ opacity: loading ? 0.5 : 1, transition: "opacity 0.3s ease" }}>
+          <Grid columns="2" gap="s">
+            <Column horizontal="center" vertical="center" style={{ textAlign: "center" }}>
               <Text
-                variant="body-default-s"
-                className="product-label"
-                style={{ color: "#8C919C", flex: 1, minWidth: 0 }}
-              >
-                {label}
-              </Text>
-              <Text
-                variant="heading-strong-s"
-                className="product-count"
+                variant="display-strong-m"
                 style={{
                   color: "#27313F",
-                  fontSize: "1.25rem",
-                  textAlign: "right",
-                  minWidth: "2rem",
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  lineHeight: 1,
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
-                {rangeData.ordersByGroup![key]}
+                {formatCurrency(rangeData.totalRevenue)}
               </Text>
-            </Flex>
-          ))}
-        </Grid>
+              <Text
+                variant="label-strong-s"
+                style={{
+                  color: "#B2BDD1",
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  marginTop: "0.2rem",
+                }}
+              >
+                Umsatz
+              </Text>
+            </Column>
+            <Column horizontal="center" vertical="center" style={{ textAlign: "center" }}>
+              <Text
+                variant="display-strong-m"
+                style={{
+                  color: "#27313F",
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {rangeData.totalOrders.toLocaleString("de-DE")}
+              </Text>
+              <Text
+                variant="label-strong-s"
+                style={{
+                  color: "#B2BDD1",
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  marginTop: "0.2rem",
+                }}
+              >
+                Bestellungen
+              </Text>
+            </Column>
+          </Grid>
+
+          {/* Produktgruppen-Breakdown (optional) */}
+          {showDetails && rangeData.ordersByGroup && (
+            <Grid columns="3" gap="s" className="product-grid" style={{ marginTop: "0.5rem" }}>
+              {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
+                <Flex key={key} vertical="center" gap="8" className="product-row">
+                  <div
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Text
+                    variant="body-default-s"
+                    className="product-label"
+                    style={{ color: "#8C919C", flex: 1, minWidth: 0 }}
+                  >
+                    {label}
+                  </Text>
+                  <Text
+                    variant="heading-strong-s"
+                    className="product-count"
+                    style={{
+                      color: "#27313F",
+                      fontSize: "1.25rem",
+                      textAlign: "right",
+                      minWidth: "2rem",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {rangeData.ordersByGroup![key]}
+                  </Text>
+                </Flex>
+              ))}
+            </Grid>
+          )}
+        </div>
       )}
 
       {/* Fehler-Anzeige */}
