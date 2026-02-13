@@ -10,12 +10,12 @@ const PRODUCT_GROUP_CONFIG: {
   label: string;
   color: string;
 }[] = [
-  { key: "PAC", label: "PAC", color: "bg-blue-500" },
-  { key: "PACL", label: "PACL", color: "bg-blue-400" },
-  { key: "Tiny-PAC", label: "Abnehm-Analyse", color: "bg-teal-500" },
-  { key: "Club", label: "Club", color: "bg-purple-500" },
-  { key: "Leicht 2.0", label: "Leicht 2.0", color: "bg-green-500" },
-  { key: "Event 2026", label: "Event", color: "bg-orange-500" },
+  { key: "PAC", label: "PAC", color: "#009399" },
+  { key: "PACL", label: "PACL", color: "#00a8af" },
+  { key: "Tiny-PAC", label: "Abnehm-Analyse", color: "#0E75B9" },
+  { key: "Club", label: "Club", color: "#73A942" },
+  { key: "Leicht 2.0", label: "Leicht 2.0", color: "#ECB31B" },
+  { key: "Event 2026", label: "Event", color: "#007a7f" },
 ];
 
 export default function SalesGrid() {
@@ -90,7 +90,7 @@ export default function SalesGrid() {
         <div className="grid grid-cols-3 gap-4">
           {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
             <div key={key} className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${color} shrink-0`} />
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
               <span className="text-sm text-intumind-gray">{label}</span>
               <span className="text-xl font-bold text-intumind-dark ml-auto">
                 {ordersByGroup[key]}

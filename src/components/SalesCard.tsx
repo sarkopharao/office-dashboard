@@ -21,9 +21,10 @@ export default function SalesCard({
     <div
       className={`rounded-2xl p-6 flex flex-col justify-center items-center text-center min-h-[140px] ${
         isHighlight
-          ? "bg-gradient-to-br from-intumind-blue to-intumind-blue-dark text-white shadow-lg"
+          ? "text-white shadow-lg"
           : "bg-white shadow-sm"
       }`}
+      style={isHighlight ? { background: "linear-gradient(to bottom right, #009399, #007a7f)" } : undefined}
     >
       <span
         className={`text-4xl font-extrabold tracking-tight leading-none number-transition ${

@@ -29,18 +29,27 @@ export default function MotivationalQuote() {
   const quote = MOTIVATIONAL_QUOTES[currentIndex];
 
   return (
-    <div className="px-6 py-4">
+    <div className="px-6 py-5">
       <div
-        className={`quote-fade ${isVisible ? "opacity-100" : "opacity-0"}`}
+        className="rounded-2xl shadow-sm p-10 relative overflow-hidden min-h-[140px] flex items-center justify-center"
+        style={{
+          backgroundImage: "url('/quote-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        <p className="text-intumind-gray italic text-sm leading-relaxed">
-          &ldquo;{quote.text}&rdquo;
-        </p>
-        {quote.author && (
-          <p className="text-intumind-gray-light text-xs mt-1">
-            — {quote.author}
+        <div
+          className={`quote-fade relative z-10 max-w-md ${isVisible ? "opacity-100" : "opacity-0"}`}
+        >
+          <p className="font-heading text-intumind-heading text-xl font-bold leading-relaxed text-center">
+            &ldquo;{quote.text}&rdquo;
           </p>
-        )}
+          {quote.author && (
+            <p className="text-sm mt-3 text-center font-medium" style={{ color: "#505359" }}>
+              — {quote.author}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
