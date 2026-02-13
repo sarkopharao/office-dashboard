@@ -137,6 +137,7 @@ export default function RevenueChart({ dailyRevenue }: RevenueChartProps) {
     <Column
       radius="l"
       padding="m"
+      className="revenue-chart"
       style={{
         flex: 1,
         minHeight: 0,
@@ -179,7 +180,7 @@ export default function RevenueChart({ dailyRevenue }: RevenueChartProps) {
       </Flex>
 
       {/* Chart – füllt restlichen Platz */}
-      <div style={{ width: "100%", flex: 1, minHeight: 0 }}>
+      <div className="revenue-chart-inner" style={{ width: "100%", flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}

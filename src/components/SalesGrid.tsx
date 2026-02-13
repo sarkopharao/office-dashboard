@@ -251,7 +251,7 @@ export default function SalesGrid() {
         </Text>
         <Grid columns="3" gap="s" className="product-grid">
           {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
-            <Flex key={key} vertical="center" gap="12">
+            <Flex key={key} vertical="center" gap="8" className="product-row">
               <div
                 style={{
                   width: "10px",
@@ -263,16 +263,20 @@ export default function SalesGrid() {
               />
               <Text
                 variant="body-default-s"
-                style={{ color: "#8C919C" }}
+                className="product-label"
+                style={{ color: "#8C919C", flex: 1, minWidth: 0 }}
               >
                 {label}
               </Text>
               <Text
                 variant="heading-strong-s"
+                className="product-count"
                 style={{
                   color: "#27313F",
-                  marginLeft: "auto",
                   fontSize: "1.25rem",
+                  textAlign: "right",
+                  minWidth: "2rem",
+                  fontVariantNumeric: "tabular-nums",
                 }}
               >
                 {ordersByGroup[key]}

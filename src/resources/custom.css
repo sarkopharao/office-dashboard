@@ -154,6 +154,19 @@ html, body {
     padding: 0.35rem 0.8rem !important;
     font-size: 0.7rem !important;
   }
+
+  /* Revenue Chart braucht explizite Höhe in scrollbarem Container */
+  .revenue-chart {
+    flex: none !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  .revenue-chart-inner {
+    flex: none !important;
+    min-height: 220px !important;
+    height: 220px !important;
+  }
 }
 
 /* ===== RESPONSIVE: Mobile (< 768px) ===== */
@@ -200,13 +213,15 @@ html, body {
     font-size: 0.65rem !important;
   }
 
-  /* SalesGrid */
+  /* SalesGrid – mehr Luft */
   .product-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
   }
 
   .sales-card {
     min-height: 80px !important;
+    padding: 0.6rem !important;
   }
 
   .sales-card-value {
@@ -217,9 +232,31 @@ html, body {
     font-size: 1rem !important;
   }
 
-  /* Chart */
-  .chart-container {
+  /* Produktgruppen – Zahlen rechts ausgerichtet */
+  .product-row {
+    gap: 6px !important;
+  }
+
+  .product-label {
+    font-size: 0.75rem !important;
+  }
+
+  .product-count {
+    font-size: 1rem !important;
+    min-width: 1.5rem !important;
+  }
+
+  /* Revenue Chart – explizite Höhe auf Mobile */
+  .revenue-chart {
+    flex: none !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  .revenue-chart-inner {
+    flex: none !important;
     min-height: 200px !important;
+    height: 200px !important;
   }
 
   /* Slideshow */
