@@ -2,16 +2,25 @@
 
 ## Projekt
 Live Sales Dashboard auf Flatscreen-TV im intumind Buero (Raspberry Pi, Kiosk-Modus).
-Next.js 16 (App Router), TypeScript, Tailwind CSS v4.
+Next.js 16 (App Router), TypeScript, Once UI Design System.
 
 ## Tech Stack
 - **Framework:** Next.js 16 mit App Router
 - **Sprache:** TypeScript
-- **Styling:** Tailwind CSS v4 (`@tailwindcss/postcss`)
-- **Fonts:** Outfit (sans-serif, Body) + Lora (serif, nur H1/H2)
+- **Styling:** Once UI Design System (`@once-ui-system/core`)
+- **Fonts:** Outfit (sans-serif, Body/Label) + Lora (serif, Heading)
 - **API:** Digistore24 REST API mit `X-DS-API-KEY` Header
 - **Daten-Cache:** File-based JSON (`data/sales-cache.json`)
 - **Repo:** https://github.com/sarkopharao/office-dashboard
+
+## Once UI Konfiguration
+- **Config:** `src/resources/once-ui.config.js` (Fonts, Style, Meta)
+- **Custom CSS:** `src/resources/custom.css` (intumind Brand Colors als 12-step Scale)
+- **Icons:** `src/resources/icons.ts`
+- **Providers:** `src/components/Providers.tsx` (ThemeProvider, LayoutProvider, etc.)
+- **Theme:** Immer Light-Mode (Dashboard auf TV)
+- **Brand Color:** Custom Teal (#009399) via CSS Custom Properties
+- **Accent:** Custom Green (#73A942)
 
 ## intumind Brand Guidelines
 
@@ -34,9 +43,9 @@ Next.js 16 (App Router), TypeScript, Tailwind CSS v4.
 - **Info:** `#0E75B9`
 
 ### Schriften
-- **Body/UI:** Outfit (sans-serif) - alle Gewichte 300-900
-- **Ueberschriften (H1/H2):** Lora (serif) - nur Bold 700, nur fuer praeaegnante Stellen (Seitenueberschrift, Kapitelueberschriften, Zitate)
-- Tailwind-Klasse: `font-heading` fuer Lora
+- **Body/UI:** Outfit (sans-serif) - via `--font-body` und `--font-label`
+- **Ueberschriften:** Lora (serif) - Bold 700 via `--font-heading`
+- Once UI Text Variants: `body-default-m`, `heading-strong-s`, `label-strong-s`, `display-strong-m`, etc.
 
 ### Logos
 Abgelegt in `/public/intumind-design/`:
@@ -53,8 +62,10 @@ Abgelegt in `/public/intumind-design/`:
 
 ## Wichtige Konventionen
 - Sprache im Code/Kommentare: Deutsch fuer UI-Texte, Englisch fuer Code
-- Tailwind v4: Dynamische Farb-Klassen (`bg-${variable}`) funktionieren NICHT - immer Inline-Styles oder feste Klassen verwenden
-- CSS `@import url()` NICHT nach `@import "tailwindcss"` verwenden - fuehrt zu Parse-Error. Stattdessen `next/font/google` nutzen
+- Once UI Layout: `Flex`, `Column`, `Grid` statt `<div>` mit CSS-Klassen
+- Once UI Typographie: `Text`, `Heading` mit `variant` Props
+- Prop-Werte: `horizontal="between"` (nicht `"space-between"`!)
+- Custom Styles: Immer via `style={{}}` Props, nicht via Tailwind-Klassen
 - API Base URL: `https://www.digistore24.com/api/call/{endpoint}?language=de`
 - Dev Server: Port 3000
 

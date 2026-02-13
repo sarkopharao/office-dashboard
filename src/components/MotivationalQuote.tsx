@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Flex, Text } from "@once-ui-system/core";
 import { MOTIVATIONAL_QUOTES, QUOTE_INTERVAL } from "@/lib/constants";
 
 export default function MotivationalQuote() {
@@ -29,28 +30,62 @@ export default function MotivationalQuote() {
   const quote = MOTIVATIONAL_QUOTES[currentIndex];
 
   return (
-    <div className="px-6 py-5">
-      <div
-        className="rounded-2xl shadow-sm p-10 relative overflow-hidden min-h-[140px] flex items-center justify-center"
+    <div style={{ padding: "0 24px 16px 24px" }}>
+      <Flex
+        radius="l"
+        padding="l"
+        horizontal="center"
+        vertical="center"
+        fillWidth
         style={{
           backgroundImage: "url('/quote-bg.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
+          minHeight: "120px",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         }}
       >
-        <div
-          className={`quote-fade relative z-10 max-w-md ${isVisible ? "opacity-100" : "opacity-0"}`}
+        <Flex
+          direction="column"
+          horizontal="center"
+          className="quote-fade"
+          style={{
+            position: "relative",
+            zIndex: 10,
+            maxWidth: "28rem",
+            opacity: isVisible ? 1 : 0,
+          }}
         >
-          <p className="font-heading text-intumind-heading text-xl font-bold leading-relaxed text-center">
+          <Text
+            variant="heading-strong-s"
+            style={{
+              color: "#27313F",
+              fontFamily: "var(--font-heading)",
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              lineHeight: 1.625,
+              textAlign: "center",
+            }}
+          >
             &ldquo;{quote.text}&rdquo;
-          </p>
+          </Text>
           {quote.author && (
-            <p className="text-sm mt-3 text-center font-medium" style={{ color: "#505359" }}>
+            <Text
+              variant="body-default-s"
+              style={{
+                color: "#505359",
+                marginTop: "0.75rem",
+                textAlign: "center",
+                fontWeight: 500,
+              }}
+            >
               — {quote.author}
-            </p>
+            </Text>
           )}
-        </div>
-      </div>
+        </Flex>
+      </Flex>
     </div>
   );
 }

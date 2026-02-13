@@ -1,12 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import { Flex, Text } from "@once-ui-system/core";
 import Clock from "./Clock";
 
 export default function Header() {
   return (
-    <header className="flex items-center justify-between px-8 py-4 bg-intumind-dark">
-      <div className="flex items-center gap-4">
+    <Flex
+      as="header"
+      horizontal="between"
+      vertical="center"
+      paddingX="l"
+      paddingY="m"
+      style={{ background: "#27313F" }}
+    >
+      <Flex vertical="center" gap="m">
         <Image
           src="/intumind-design/intumind-logo-laenglich-white.png"
           alt="intumind"
@@ -14,11 +22,19 @@ export default function Header() {
           height={40}
           priority
         />
-      </div>
-      <div className="font-heading text-intumind-gray-light text-sm font-bold uppercase tracking-widest">
+      </Flex>
+      <Text
+        variant="label-strong-s"
+        style={{
+          color: "#B2BDD1",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          fontFamily: "var(--font-heading)",
+        }}
+      >
         Office Dashboard
-      </div>
+      </Text>
       <Clock />
-    </header>
+    </Flex>
   );
 }

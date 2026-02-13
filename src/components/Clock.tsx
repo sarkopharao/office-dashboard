@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Column, Text } from "@once-ui-system/core";
 
 export default function Clock() {
   const [time, setTime] = useState<Date | null>(null);
@@ -30,13 +31,23 @@ export default function Clock() {
   const minutes = time.getMinutes().toString().padStart(2, "0");
 
   return (
-    <div className="text-right">
-      <div className="text-intumind-white text-xl font-semibold tabular-nums">
+    <Column style={{ textAlign: "right" }}>
+      <Text
+        variant="body-strong-m"
+        style={{
+          color: "#ffffff",
+          fontVariantNumeric: "tabular-nums",
+          fontSize: "1.25rem",
+        }}
+      >
         {hours}:{minutes}
-      </div>
-      <div className="text-intumind-gray-light text-xs">
+      </Text>
+      <Text
+        variant="label-default-s"
+        style={{ color: "#B2BDD1", fontSize: "0.75rem" }}
+      >
         {day}, {date}. {month} {year}
-      </div>
-    </div>
+      </Text>
+    </Column>
   );
 }

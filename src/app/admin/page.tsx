@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Column, Flex, Grid, Text, Heading, Button, Input } from "@once-ui-system/core";
 import type { Photo } from "@/types";
 
 export default function AdminPage() {
@@ -23,8 +24,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    // Prüfe ob bereits eingeloggt (Cookie existiert)
-    fetchPhotos().then((res) => {
+    fetchPhotos().then(() => {
       // Wenn Fotos geladen werden, sind wir vermutlich eingeloggt
     });
   }, [fetchPhotos]);
@@ -99,61 +99,116 @@ export default function AdminPage() {
   // Login-Formular
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-intumind-bg flex items-center justify-center">
-        <form
-          onSubmit={handleLogin}
-          className="bg-intumind-white rounded-2xl shadow-lg p-8 w-full max-w-sm"
-        >
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-intumind-dark">
-              <span className="text-intumind-blue">intu</span>mind
-            </h1>
-            <p className="text-intumind-gray text-sm mt-1">Admin-Bereich</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
-
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Passwort"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-intumind-dark focus:outline-none focus:border-intumind-blue focus:ring-1 focus:ring-intumind-blue"
-            autoFocus
-          />
-
-          <button
-            type="submit"
-            className="w-full mt-4 bg-intumind-blue text-white py-3 rounded-xl font-medium hover:bg-intumind-blue-dark transition-colors"
+      <Flex
+        fillWidth
+        horizontal="center"
+        vertical="center"
+        style={{ minHeight: "100vh", background: "#f0f2f5" }}
+      >
+        <form onSubmit={handleLogin}>
+          <Column
+            radius="l"
+            padding="xl"
+            gap="m"
+            style={{
+              background: "#ffffff",
+              boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+              width: "100%",
+              maxWidth: "24rem",
+            }}
           >
-            Anmelden
-          </button>
+            <Column horizontal="center" gap="4">
+              <Heading variant="heading-strong-m" style={{ color: "#27313F" }}>
+                <span style={{ color: "#009399" }}>intu</span>mind
+              </Heading>
+              <Text variant="body-default-s" style={{ color: "#8C919C" }}>
+                Admin-Bereich
+              </Text>
+            </Column>
+
+            {error && (
+              <Flex
+                radius="m"
+                padding="12"
+                style={{ background: "#fef2f2", color: "#dc2626", fontSize: "0.875rem" }}
+              >
+                {error}
+              </Flex>
+            )}
+
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Passwort"
+              autoFocus
+              style={{
+                width: "100%",
+                padding: "0.75rem 1rem",
+                border: "1px solid #e5e7eb",
+                borderRadius: "0.75rem",
+                color: "#27313F",
+                outline: "none",
+                fontSize: "1rem",
+                boxSizing: "border-box",
+              }}
+            />
+
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                marginTop: "0.25rem",
+                background: "#009399",
+                color: "#ffffff",
+                padding: "0.75rem",
+                borderRadius: "0.75rem",
+                fontWeight: 500,
+                border: "none",
+                cursor: "pointer",
+                fontSize: "1rem",
+              }}
+            >
+              Anmelden
+            </button>
+          </Column>
         </form>
-      </div>
+      </Flex>
     );
   }
 
   // Admin-Dashboard
   return (
-    <div className="min-h-screen bg-intumind-bg">
+    <Column fillWidth style={{ minHeight: "100vh", background: "#f0f2f5" }}>
       {/* Header */}
-      <header className="bg-intumind-dark px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-intumind-white text-xl font-bold">
-            <span className="text-intumind-blue">intu</span>mind
-            <span className="text-intumind-gray-light font-normal ml-2 text-sm">
+      <Flex
+        as="header"
+        horizontal="between"
+        vertical="center"
+        paddingX="l"
+        paddingY="m"
+        style={{ background: "#27313F" }}
+      >
+        <Flex vertical="center" gap="m">
+          <Heading variant="heading-strong-s" style={{ color: "#ffffff" }}>
+            <span style={{ color: "#009399" }}>intu</span>mind
+            <Text
+              as="span"
+              variant="body-default-s"
+              style={{ color: "#B2BDD1", marginLeft: "0.5rem" }}
+            >
               Admin
-            </span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-4">
+            </Text>
+          </Heading>
+        </Flex>
+        <Flex vertical="center" gap="m">
           <a
             href="/"
-            className="text-intumind-gray-light hover:text-intumind-white text-sm transition-colors"
+            style={{
+              color: "#B2BDD1",
+              fontSize: "0.875rem",
+              textDecoration: "none",
+            }}
           >
             Dashboard ansehen
           </a>
@@ -162,14 +217,20 @@ export default function AdminPage() {
               fetch("/api/auth", { method: "DELETE" });
               setIsLoggedIn(false);
             }}
-            className="text-intumind-gray-light hover:text-red-400 text-sm transition-colors"
+            style={{
+              color: "#B2BDD1",
+              fontSize: "0.875rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+            }}
           >
             Abmelden
           </button>
-        </div>
-      </header>
+        </Flex>
+      </Flex>
 
-      <div className="max-w-5xl mx-auto p-8">
+      <Column style={{ maxWidth: "64rem", margin: "0 auto", width: "100%" }} padding="xl">
         {/* Upload-Bereich */}
         <div
           onDragOver={(e) => {
@@ -178,73 +239,142 @@ export default function AdminPage() {
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
-            dragOver
-              ? "border-intumind-blue bg-intumind-blue/5"
-              : "border-gray-300 bg-intumind-white"
-          }`}
+          style={{
+            border: "2px dashed",
+            borderColor: dragOver ? "#009399" : "#d1d5db",
+            borderRadius: "1rem",
+            padding: "3rem",
+            textAlign: "center",
+            transition: "border-color 0.2s, background 0.2s",
+            background: dragOver ? "rgba(0,147,153,0.05)" : "#ffffff",
+          }}
         >
-          <div className="text-4xl mb-3">📸</div>
-          <p className="text-intumind-dark font-medium mb-1">
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📸</div>
+          <Text variant="body-strong-m" style={{ color: "#27313F", marginBottom: "0.25rem" }}>
             Teamfotos hier reinziehen
-          </p>
-          <p className="text-intumind-gray text-sm mb-4">
+          </Text>
+          <Text variant="body-default-s" style={{ color: "#8C919C", marginBottom: "1rem" }}>
             oder klicke um Dateien auszuwählen (JPG, PNG, WEBP, max. 10 MB)
-          </p>
-          <label className="inline-block bg-intumind-blue text-white px-6 py-2 rounded-full cursor-pointer hover:bg-intumind-blue-dark transition-colors">
+          </Text>
+          <label
+            style={{
+              display: "inline-block",
+              background: "#009399",
+              color: "#ffffff",
+              padding: "0.5rem 1.5rem",
+              borderRadius: "9999px",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
             {uploading ? "Wird hochgeladen..." : "Dateien auswählen"}
             <input
               type="file"
               multiple
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => handleUpload(e.target.files)}
-              className="hidden"
+              style={{ display: "none" }}
               disabled={uploading}
             />
           </label>
         </div>
 
         {/* Foto-Galerie */}
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-intumind-dark mb-4">
+        <Column gap="m" style={{ marginTop: "2rem" }}>
+          <Heading variant="heading-strong-s" style={{ color: "#27313F" }}>
             Teamfotos ({photos.length})
-          </h2>
+          </Heading>
 
           {photos.length === 0 ? (
-            <p className="text-intumind-gray text-center py-12">
+            <Text
+              variant="body-default-m"
+              style={{ color: "#8C919C", textAlign: "center", padding: "3rem 0" }}
+            >
               Noch keine Fotos hochgeladen.
-            </p>
+            </Text>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <Grid columns="4" gap="m">
               {photos.map((photo) => (
-                <div
+                <Column
                   key={photo.id}
-                  className="relative group rounded-xl overflow-hidden bg-intumind-white shadow-sm"
+                  radius="m"
+                  style={{
+                    overflow: "hidden",
+                    background: "#ffffff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    position: "relative",
+                  }}
                 >
-                  <img
-                    src={`/api/photos/${photo.id}/file`}
-                    alt={photo.originalName}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                    <button
-                      onClick={() => handleDelete(photo.id.toString())}
-                      className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-all"
+                  <div style={{ position: "relative" }}>
+                    <img
+                      src={`/api/photos/${photo.id}/file`}
+                      alt={photo.originalName}
+                      style={{
+                        width: "100%",
+                        height: "12rem",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "background 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.4)";
+                        const btn = (e.currentTarget as HTMLElement).querySelector("button");
+                        if (btn) btn.style.opacity = "1";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = "transparent";
+                        const btn = (e.currentTarget as HTMLElement).querySelector("button");
+                        if (btn) btn.style.opacity = "0";
+                      }}
                     >
-                      Löschen
-                    </button>
+                      <button
+                        onClick={() => handleDelete(photo.id.toString())}
+                        style={{
+                          opacity: 0,
+                          background: "#ef4444",
+                          color: "#ffffff",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                          border: "none",
+                          cursor: "pointer",
+                          transition: "opacity 0.2s",
+                        }}
+                      >
+                        Löschen
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-2">
-                    <p className="text-xs text-intumind-gray truncate">
+                  <Flex padding="8">
+                    <Text
+                      variant="label-default-s"
+                      style={{
+                        color: "#8C919C",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {photo.originalName}
-                    </p>
-                  </div>
-                </div>
+                    </Text>
+                  </Flex>
+                </Column>
               ))}
-            </div>
+            </Grid>
           )}
-        </div>
-      </div>
-    </div>
+        </Column>
+      </Column>
+    </Column>
   );
 }

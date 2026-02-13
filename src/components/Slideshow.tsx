@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Flex, Column, Text } from "@once-ui-system/core";
 import { SLIDESHOW_INTERVAL } from "@/lib/constants";
 import type { Photo } from "@/types";
 
@@ -32,22 +33,30 @@ interface PolaroidProps {
   className?: string;
 }
 
-function Polaroid({ photoId, alt, rotation, style, className = "" }: PolaroidProps) {
+function Polaroid({ photoId, alt, rotation, style: extraStyle, className = "" }: PolaroidProps) {
   return (
     <div
-      className={`relative flex flex-col ${className}`}
+      className={className}
       style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
         background: "#ffffff",
         padding: "8px 8px 40px 8px",
         boxShadow: "0 6px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)",
         transform: `rotate(${rotation}deg)`,
-        ...style,
+        ...extraStyle,
       }}
     >
       <img
         src={`/api/photos/${photoId}/file`}
         alt={alt}
-        className="w-full object-cover flex-1 min-h-0"
+        style={{
+          width: "100%",
+          objectFit: "cover",
+          flex: 1,
+          minHeight: 0,
+        }}
       />
     </div>
   );
@@ -105,7 +114,6 @@ export default function Slideshow() {
   // Preload nächste Bilder
   useEffect(() => {
     if (photos.length <= 1) return;
-    // Preload nächste 2 Bilder
     for (let i = 1; i <= 2; i++) {
       const nextIdx = (currentIndex + i) % photos.length;
       const img = new window.Image();
@@ -118,14 +126,27 @@ export default function Slideshow() {
 
   if (photos.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center rounded-2xl m-4">
-        <div className="text-white text-4xl font-bold mb-2">
-          <span className="opacity-80">intu</span>mind
-        </div>
-        <div className="text-white/60 text-sm">
+      <Flex
+        fillHeight
+        direction="column"
+        horizontal="center"
+        vertical="center"
+        radius="l"
+        margin="m"
+      >
+        <Text
+          variant="display-strong-m"
+          style={{ color: "#ffffff", fontWeight: 700 }}
+        >
+          <span style={{ opacity: 0.8 }}>intu</span>mind
+        </Text>
+        <Text
+          variant="body-default-s"
+          style={{ color: "rgba(255,255,255,0.6)" }}
+        >
           Lade Teamfotos im Admin-Bereich hoch
-        </div>
-      </div>
+        </Text>
+      </Flex>
     );
   }
 
@@ -173,14 +194,14 @@ export default function Slideshow() {
           );
         }
         return (
-          <div className="flex items-center justify-center" style={{ width: "85%", height: "85%", position: "relative" }}>
+          <div style={{ width: "85%", height: "85%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Hinteres Foto – rechts unten */}
             <Polaroid
               photoId={photos[secondIndex].id}
               alt={photos[secondIndex].originalName}
               rotation={5}
-              className="absolute"
               style={{
+                position: "absolute",
                 width: "48%",
                 height: "55%",
                 right: "5%",
@@ -193,8 +214,8 @@ export default function Slideshow() {
               photoId={photos[currentIndex].id}
               alt={photos[currentIndex].originalName}
               rotation={-3}
-              className="absolute"
               style={{
+                position: "absolute",
                 width: "48%",
                 height: "55%",
                 left: "10%",
@@ -217,14 +238,14 @@ export default function Slideshow() {
           );
         }
         return (
-          <div className="flex items-center justify-center" style={{ width: "90%", height: "85%", position: "relative" }}>
+          <div style={{ width: "90%", height: "85%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Linkes Foto – unten */}
             <Polaroid
               photoId={photos[currentIndex].id}
               alt={photos[currentIndex].originalName}
               rotation={-2}
-              className="absolute"
               style={{
+                position: "absolute",
                 width: "45%",
                 height: "55%",
                 left: "5%",
@@ -237,8 +258,8 @@ export default function Slideshow() {
               photoId={photos[secondIndex].id}
               alt={photos[secondIndex].originalName}
               rotation={3}
-              className="absolute"
               style={{
+                position: "absolute",
                 width: "45%",
                 height: "55%",
                 right: "5%",
@@ -255,24 +276,39 @@ export default function Slideshow() {
   };
 
   return (
-    <div className="relative h-full flex items-center justify-center m-4">
-      <div className={`w-full h-full flex items-center justify-center slideshow-image ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}>
+    <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", boxSizing: "border-box" }}>
+      <div
+        className="slideshow-image"
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: isVisible ? 1 : 0,
+        }}
+      >
         {renderLayout()}
       </div>
 
       {/* Dezenter Foto-Counter */}
-      <div
-        className="absolute bottom-3 right-3 text-xs font-medium px-2 py-0.5 rounded-full"
+      <Text
+        variant="label-default-s"
         style={{
+          position: "absolute",
+          bottom: "12px",
+          right: "12px",
           color: "#8C919C",
           background: "rgba(255,255,255,0.6)",
           backdropFilter: "blur(4px)",
+          padding: "2px 8px",
+          borderRadius: "9999px",
+          fontSize: "0.75rem",
+          fontWeight: 500,
         }}
       >
         {currentIndex + 1} / {photos.length}
-      </div>
+      </Text>
     </div>
   );
 }

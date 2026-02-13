@@ -36,8 +36,10 @@ export default function DashboardBackground() {
     <>
       {/* Aktueller Hintergrund */}
       <div
-        className="absolute inset-0 z-0"
         style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
           background: BACKGROUND_STYLES[bgIndex],
           transition: "opacity 2s ease-in-out",
           opacity: isTransitioning ? 0 : 1,
@@ -45,8 +47,10 @@ export default function DashboardBackground() {
       />
       {/* Nächster Hintergrund (fade-in) */}
       <div
-        className="absolute inset-0 z-0"
         style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
           background: BACKGROUND_STYLES[nextIndex],
           transition: "opacity 2s ease-in-out",
           opacity: isTransitioning ? 1 : 0,

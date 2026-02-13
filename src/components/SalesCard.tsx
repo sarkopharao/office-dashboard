@@ -1,5 +1,7 @@
 "use client";
 
+import { Column, Text } from "@once-ui-system/core";
+
 interface SalesCardProps {
   label: string;
   value: string | number;
@@ -18,51 +20,88 @@ export default function SalesCard({
   const isHighlight = variant === "highlight";
 
   return (
-    <div
-      className={`rounded-2xl p-6 flex flex-col justify-center items-center text-center min-h-[140px] ${
-        isHighlight
-          ? "text-white shadow-lg"
-          : "shadow-sm backdrop-blur-sm"
-      }`}
-      style={isHighlight
-        ? { background: "linear-gradient(to bottom right, #009399, #007a7f)" }
-        : { background: "rgba(255, 255, 255, 0.75)" }
-      }
+    <Column
+      horizontal="center"
+      vertical="center"
+      padding="l"
+      radius="l"
+      style={{
+        minHeight: "140px",
+        textAlign: "center",
+        ...(isHighlight
+          ? {
+              background: "linear-gradient(to bottom right, #009399, #007a7f)",
+              color: "#ffffff",
+              boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+            }
+          : {
+              background: "rgba(255, 255, 255, 0.75)",
+              backdropFilter: "blur(4px)",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }),
+      }}
     >
-      <span
-        className={`text-4xl font-extrabold tracking-tight leading-none number-transition ${
-          isHighlight ? "text-white" : "text-intumind-dark"
-        }`}
+      <Text
+        variant="display-strong-m"
+        className="number-transition"
+        style={{
+          color: isHighlight ? "#ffffff" : "#27313F",
+          fontSize: "2.25rem",
+          fontWeight: 800,
+          letterSpacing: "-0.025em",
+          lineHeight: 1,
+        }}
       >
         {typeof value === "number" ? value.toLocaleString("de-DE") : value}
-      </span>
-      <span
-        className={`text-xs font-semibold tracking-widest uppercase mt-2 ${
-          isHighlight ? "text-white/80" : "text-intumind-gray-light"
-        }`}
+      </Text>
+      <Text
+        variant="label-strong-s"
+        style={{
+          color: isHighlight ? "rgba(255,255,255,0.8)" : "#B2BDD1",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          marginTop: "0.5rem",
+          fontSize: "0.75rem",
+        }}
       >
         {label}
-      </span>
+      </Text>
 
       {sublabel && subvalue !== undefined && (
         <>
-          <div className={`w-8 h-px my-3 ${isHighlight ? "bg-white/30" : "bg-gray-200"}`} />
-          <span
-            className={`text-2xl font-bold leading-none ${
-              isHighlight ? "text-white" : "text-intumind-dark"
-            }`}
+          <div
+            style={{
+              width: "2rem",
+              height: "1px",
+              background: isHighlight ? "rgba(255,255,255,0.3)" : "#e5e7eb",
+              margin: "0.75rem 0",
+            }}
+          />
+          <Text
+            variant="heading-strong-s"
+            style={{
+              color: isHighlight ? "#ffffff" : "#27313F",
+              fontSize: "1.5rem",
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
           >
             {typeof subvalue === "number" ? subvalue.toLocaleString("de-DE") : subvalue}
-          </span>
-          <span
-            className={`text-xs font-semibold tracking-widest uppercase mt-1 ${
-              isHighlight ? "text-white/60" : "text-intumind-gray-light"
-            }`}
+          </Text>
+          <Text
+            variant="label-strong-s"
+            style={{
+              color: isHighlight ? "rgba(255,255,255,0.6)" : "#B2BDD1",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              marginTop: "0.25rem",
+              fontSize: "0.75rem",
+            }}
           >
             {sublabel}
-          </span>
+          </Text>
         </>
       )}
-    </div>
+    </Column>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Column, Flex, Grid, Text } from "@once-ui-system/core";
 import SalesCard from "./SalesCard";
 import { DUMMY_SALES, SALES_REFRESH_INTERVAL } from "@/lib/constants";
 import type { SalesData } from "@/types";
@@ -58,9 +59,9 @@ export default function SalesGrid() {
   };
 
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <Column gap="m" padding="l">
       {/* Obere Reihe: Kunden + Tagesumsatz */}
-      <div className="grid grid-cols-2 gap-4">
+      <Grid columns="2" gap="m">
         <SalesCard
           label="Gesamtkunden"
           value={sales.totalCustomers}
@@ -74,10 +75,10 @@ export default function SalesGrid() {
           sublabel="Umsatz Gestern"
           subvalue={formatCurrency(sales.revenueYesterday)}
         />
-      </div>
+      </Grid>
 
       {/* Untere Reihe: Monatsumsatz + Bestellungen */}
-      <div className="grid grid-cols-2 gap-4">
+      <Grid columns="2" gap="m">
         <SalesCard
           label="Umsatz Monat"
           value={formatCurrency(sales.revenueThisMonth)}
@@ -90,25 +91,62 @@ export default function SalesGrid() {
           sublabel="Bestellungen Gestern"
           subvalue={sales.ordersYesterday}
         />
-      </div>
+      </Grid>
 
       {/* Bestellungen nach Produktgruppen */}
-      <div className="rounded-2xl shadow-sm p-6 backdrop-blur-sm" style={{ background: "rgba(255, 255, 255, 0.75)" }}>
-        <h3 className="text-xs font-semibold tracking-widest uppercase text-intumind-gray-light mb-5">
+      <Column
+        radius="l"
+        padding="l"
+        style={{
+          background: "rgba(255, 255, 255, 0.75)",
+          backdropFilter: "blur(4px)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Text
+          variant="label-strong-s"
+          style={{
+            color: "#B2BDD1",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            marginBottom: "1.25rem",
+            fontSize: "0.75rem",
+          }}
+        >
           Bestellungen Heute nach Produkt
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
+        </Text>
+        <Grid columns="3" gap="m">
           {PRODUCT_GROUP_CONFIG.map(({ key, label, color }) => (
-            <div key={key} className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-              <span className="text-sm text-intumind-gray">{label}</span>
-              <span className="text-xl font-bold text-intumind-dark ml-auto">
+            <Flex key={key} vertical="center" gap="12">
+              <div
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  backgroundColor: color,
+                  flexShrink: 0,
+                }}
+              />
+              <Text
+                variant="body-default-s"
+                style={{ color: "#8C919C" }}
+              >
+                {label}
+              </Text>
+              <Text
+                variant="heading-strong-s"
+                style={{
+                  color: "#27313F",
+                  marginLeft: "auto",
+                  fontSize: "1.25rem",
+                }}
+              >
                 {ordersByGroup[key]}
-              </span>
-            </div>
+              </Text>
+            </Flex>
           ))}
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </Column>
+    </Column>
   );
 }
