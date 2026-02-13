@@ -50,7 +50,8 @@ export default function LoginPage() {
 
       if (error) {
         setStatus("error");
-        setErrorMessage(error.message);
+        console.error("Supabase OTP Fehler:", error);
+        setErrorMessage(error.message || `Fehler: ${JSON.stringify(error)}`);
         return;
       }
 
