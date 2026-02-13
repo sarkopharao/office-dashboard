@@ -23,8 +23,7 @@ const PRODUCT_GROUP_CONFIG: {
 
 export default function SalesGrid() {
   const [sales, setSales] = useState<SalesData>(DUMMY_SALES);
-  // TODO: Test-Modus – nach dem Anschauen wieder auf 0 setzen!
-  const [newOrderCount, setNewOrderCount] = useState(3);
+  const [newOrderCount, setNewOrderCount] = useState(0);
   const prevOrdersRef = useRef<number | null>(null);
   const isFirstLoadRef = useRef(true);
 
