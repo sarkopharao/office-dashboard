@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Flex } from "@once-ui-system/core";
 import { createClient } from "@/lib/supabase/client";
 
 export default function MobileFooter() {
@@ -34,13 +33,12 @@ export default function MobileFooter() {
   if (!loggedIn) return null;
 
   return (
-    <Flex
-      horizontal="center"
-      vertical="center"
-      gap="12"
+    <div
       className="mobile-footer"
       style={{
-        display: "none",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "12px",
         padding: "1rem 1.5rem 2rem",
       }}
     >
@@ -84,6 +82,6 @@ export default function MobileFooter() {
         <span>👋</span>
         Abmelden
       </button>
-    </Flex>
+    </div>
   );
 }

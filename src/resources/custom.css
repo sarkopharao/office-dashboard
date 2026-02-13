@@ -116,6 +116,11 @@ html, body {
   min-height: 0;
 }
 
+/* Mobile Footer – Default versteckt */
+.mobile-footer {
+  display: none;
+}
+
 /* ===== RESPONSIVE: Tablet (768–1023px) ===== */
 
 @media (max-width: 1023px) {
